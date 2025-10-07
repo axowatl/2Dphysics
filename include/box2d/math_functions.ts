@@ -1,10 +1,4 @@
 //#region Math
-/**
- * @defgroup math Math
- * @brief Vector math types and functions
- * @{
- */
-
 /// 2D vector
 /// This can be used to represent a point or free vector
 class b2Vec2
@@ -95,22 +89,15 @@ class b2Plane
         this.offset = o;
     }
 }
-
-/**@}*/
 // #endregion Math
-
-/**
- * @addtogroup math
- * @{
- */
-
+//#region Math
 /// https://en.wikipedia.org/wiki/Pi
 const B2_PI = 3.14159265359;
 
-static const b2Vec2_zero: b2Vec2 = new b2Vec2(0, 0);
-static const b2Rot_identity: b2Rot = new b2Rot(1, 0);
-static const b2Transform_identity: b2Transform = new b2Transform(new b2Vec2(0, 0), new b2Rot(1, 0));
-static const b2Mat22_zero: b2Mat22 = new b2Mat22(new b2Vec2(0, 0), new b2Vec2(0, 0));
+const b2Vec2_zero: b2Vec2 = new b2Vec2(0, 0);
+const b2Rot_identity: b2Rot = new b2Rot(1, 0);
+const b2Transform_identity: b2Transform = new b2Transform(new b2Vec2(0, 0), new b2Rot(1, 0));
+const b2Mat22_zero: b2Mat22 = new b2Mat22(new b2Vec2(0, 0), new b2Vec2(0, 0));
 
 /// Is this a valid number? Not NaN or infinity.
 function b2IsValidFloat(a: number): boolean
@@ -348,6 +335,11 @@ function b2MulSV(s: number, v: b2Vec2): b2Vec2
 	return new b2Vec2(s * v.x, s * v.y);
 }
 
+function b2MulVS(v: b2Vec2, s: number): b2Vec2
+{
+	return new b2Vec2(v.x * s, v.y * s);
+}
+
 /// a + s * b
 function b2MulAdd(a: b2Vec2, s: number, b: b2Vec2): b2Vec2
 {
@@ -425,17 +417,17 @@ function b2IsNormalized(a: b2Vec2): boolean
 
 /// Convert a vector into a unit vector if possible, otherwise returns the zero vector. Also
 /// outputs the length.
-function b2GetLengthAndNormalize(length: number, v: b2Vec2): b2Vec2
+function b2GetLengthAndNormalize(length: number, v: b2Vec2): [b2Vec2, number]
 {
-	*length = sqrtf( v.x * v.x + v.y * v.y );
-	if ( *length < Number.EPSILON )
+	length = Math.sqrt( v.x * v.x + v.y * v.y );
+	if (length < Number.EPSILON)
 	{
-		return B2_LITERAL( b2Vec2 ){ 0.0f, 0.0f };
+		return [new b2Vec2(0, 0), 0];
 	}
 
-	float invLength = 1.0f / *length;
-	b2Vec2 n = { invLength * v.x, invLength * v.y };
-	return n;
+	const invLength: number = 1 / length;
+	const n: b2Vec2 = new b2Vec2(invLength * v.x, invLength * v.y);
+	return [n, length];
 }
 
 /// Normalize rotation
@@ -450,48 +442,57 @@ function b2NormalizeRot(q: b2Rot): b2Rot
 /// Integrate rotation from angular velocity
 /// @param q1 initial rotation
 /// @param deltaAngle the angular displacement in radians
-B2_INLINE b2Rot b2IntegrateRotation( b2Rot q1, float deltaAngle )
+function b2IntegrateRotation(q1: b2Rot, deltaAngle: number): b2Rot
 {
 	// dc/dt = -omega * sin(t)
 	// ds/dt = omega * cos(t)
 	// c2 = c1 - omega * h * s1
 	// s2 = s1 + omega * h * c1
-	b2Rot q2 = { q1.c - deltaAngle * q1.s, q1.s + deltaAngle * q1.c };
-	float mag = sqrtf( q2.s * q2.s + q2.c * q2.c );
-	float invMag = mag > 0.0f ? 1.0f / mag : 0.0f;
-	b2Rot qn = { q2.c * invMag, q2.s * invMag };
+	const q2: b2Rot = new b2Rot(q1.c - deltaAngle * q1.s, q1.s + deltaAngle * q1.c);
+	const mag: number = Math.sqrt( q2.s * q2.s + q2.c * q2.c );
+	const invMag: number = mag > 0 ? 1 / mag : 0;
+	const qn: b2Rot = new b2Rot(q2.c * invMag, q2.s * invMag);
 	return qn;
 }
 
 /// Get the length squared of this vector
-B2_INLINE float b2LengthSquared( b2Vec2 v )
+function b2LengthSquared(v: b2Vec2): number
 {
 	return v.x * v.x + v.y * v.y;
 }
 
 /// Get the distance squared between points
-B2_INLINE float b2DistanceSquared( b2Vec2 a, b2Vec2 b )
+function b2DistanceSquared(a: b2Vec2, b: b2Vec2): number
 {
-	b2Vec2 c = { b.x - a.x, b.y - a.y };
+	const c: b2Vec2 = new b2Vec2(b.x - a.x, b.y - a.y);
 	return c.x * c.x + c.y * c.y;
 }
 
 /// Make a rotation using an angle in radians
-B2_INLINE b2Rot b2MakeRot( float radians )
+function b2MakeRot(radians: number): b2Rot
 {
-	b2CosSin cs = b2ComputeCosSin( radians );
-	return B2_LITERAL( b2Rot ){ cs.cosine, cs.sine };
+	const cs: b2CosSin = b2ComputeCosSin(radians);
+	return new b2Rot(cs.cosine, cs.sine);
 }
 
 /// Make a rotation using a unit vector
-B2_INLINE b2Rot b2MakeRotFromUnitVector( b2Vec2 unitVector )
+function b2MakeRotFromUnitVector(unitVector: b2Vec2): b2Rot
 {
-	B2_ASSERT( b2IsNormalized( unitVector ) );
-	return B2_LITERAL( b2Rot ){ unitVector.x, unitVector.y };
+	console.assert(b2IsNormalized(unitVector));
+	return new b2Rot(unitVector.x, unitVector.y);
 }
 
 /// Compute the rotation between two unit vectors
-B2_API b2Rot b2ComputeRotationBetweenUnitVectors( b2Vec2 v1, b2Vec2 v2 );
+function b2ComputeRotationBetweenUnitVectors(v1: b2Vec2, v2: b2Vec2): b2Rot
+{
+	console.assert(Math.abs(1 - b2Length(v1)) < 100 * Number.EPSILON);
+	console.assert(Math.abs(1 - b2Length(v2)) < 100 * Number.EPSILON);
+
+	let rot: b2Rot = b2Rot_identity;
+	rot.c = b2Dot(v1, v2);
+	rot.s = b2Cross(v1, v2);
+	return b2NormalizeRot(rot);
+}
 
 /// Is this rotation normalized?
 function b2IsNormalizedRot(q: b2Rot): boolean
@@ -504,17 +505,17 @@ function b2IsNormalizedRot(q: b2Rot): boolean
 /// Normalized linear interpolation
 /// https://fgiesen.wordpress.com/2012/08/15/linear-interpolation-past-present-and-future/
 ///	https://web.archive.org/web/20170825184056/http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/
-B2_INLINE b2Rot b2NLerp( b2Rot q1, b2Rot q2, float t )
+function b2NLerp(q1: b2Rot, q2: b2Rot, t: number): b2Rot
 {
-	float omt = 1.0f - t;
-	b2Rot q = {
+	const omt: number = 1 - t;
+	const q: b2Rot = new b2Rot(
 		omt * q1.c + t * q2.c,
 		omt * q1.s + t * q2.s,
-	};
+	);
 
-	float mag = sqrtf( q.s * q.s + q.c * q.c );
-	float invMag = mag > 0.0f ? 1.0f / mag : 0.0f;
-	b2Rot qn = { q.c * invMag, q.s * invMag };
+	const mag: number = Math.sqrt( q.s * q.s + q.c * q.c );
+	const invMag: number = mag > 0 ? 1 / mag : 0;
+	const qn: b2Rot = new b2Rot(q.c * invMag, q.s * invMag);
 	return qn;
 }
 
@@ -522,7 +523,7 @@ B2_INLINE b2Rot b2NLerp( b2Rot q1, b2Rot q2, float t )
 /// @param q1 initial rotation
 /// @param q2 final rotation
 /// @param inv_h inverse time step
-B2_INLINE float b2ComputeAngularVelocity( b2Rot q1, b2Rot q2, float inv_h )
+function b2ComputeAngularVelocity(q1: b2Rot, q2: b2Rot, inv_h: number): number
 {
 	// ds/dt = omega * cos(t)
 	// dc/dt = -omega * sin(t)
@@ -534,38 +535,36 @@ B2_INLINE float b2ComputeAngularVelocity( b2Rot q1, b2Rot q2, float inv_h )
 	// omega * h = (c1 - c2) * s1 + (s2 - s1) * c1;
 	// omega * h = s1 * c1 - c2 * s1 + s2 * c1 - s1 * c1
 	// omega * h = s2 * c1 - c2 * s1 = sin(a2 - a1) ~= a2 - a1 for small delta
-	float omega = inv_h * ( q2.s * q1.c - q2.c * q1.s );
+	const omega: number = inv_h * ( q2.s * q1.c - q2.c * q1.s );
 	return omega;
 }
 
 /// Get the angle in radians in the range [-pi, pi]
-B2_INLINE float b2Rot_GetAngle( b2Rot q )
+function b2Rot_GetAngle(q: b2Rot): number
 {
 	return b2Atan2( q.s, q.c );
 }
 
 /// Get the x-axis
-B2_INLINE b2Vec2 b2Rot_GetXAxis( b2Rot q )
+function b2Rot_GetXAxis(q: b2Rot): b2Vec2
 {
-	b2Vec2 v = { q.c, q.s };
-	return v;
+	return new b2Vec2(q.c, q.s);
 }
 
 /// Get the y-axis
-B2_INLINE b2Vec2 b2Rot_GetYAxis( b2Rot q )
+function b2Rot_GetYAxis(q: b2Rot): b2Vec2
 {
-	b2Vec2 v = { -q.s, q.c };
-	return v;
+	return new b2Vec2(-q.s, q.c);
 }
 
 /// Multiply two rotations: q * r
-B2_INLINE b2Rot b2MulRot( b2Rot q, b2Rot r )
+function b2MulRot(q: b2Rot, r: b2Rot): b2Rot
 {
 	// [qc -qs] * [rc -rs] = [qc*rc-qs*rs -qc*rs-qs*rc]
 	// [qs  qc]   [rs  rc]   [qs*rc+qc*rs -qs*rs+qc*rc]
 	// s(q + r) = qs * rc + qc * rs
 	// c(q + r) = qc * rc - qs * rs
-	b2Rot qr;
+	let qr: b2Rot = b2Rot_identity
 	qr.s = q.s * r.c + q.c * r.s;
 	qr.c = q.c * r.c - q.s * r.s;
 	return qr;
@@ -573,25 +572,25 @@ B2_INLINE b2Rot b2MulRot( b2Rot q, b2Rot r )
 
 /// Transpose multiply two rotations: inv(a) * b
 /// This rotates a vector local in frame b into a vector local in frame a
-B2_INLINE b2Rot b2InvMulRot( b2Rot a, b2Rot b )
+function b2InvMulRot(a: b2Rot, b: b2Rot): b2Rot
 {
 	// [ ac as] * [bc -bs] = [ac*bc+qs*bs -ac*bs+as*bc]
 	// [-as ac]   [bs  bc]   [-as*bc+ac*bs as*bs+ac*bc]
 	// s(a - b) = ac * bs - as * bc
 	// c(a - b) = ac * bc + as * bs
-	b2Rot r;
+	let r: b2Rot = b2Rot_identity;
 	r.s = a.c * b.s - a.s * b.c;
 	r.c = a.c * b.c + a.s * b.s;
 	return r;
 }
 
 /// Relative angle between a and b
-B2_INLINE float b2RelativeAngle( b2Rot a, b2Rot b )
+function b2RelativeAngle(a: b2Rot, b: b2Rot): number
 {
 	// sin(b - a) = bs * ac - bc * as
 	// cos(b - a) = bc * ac + bs * as
-	float s = a.c * b.s - a.s * b.c;
-	float c = a.c *b.c + a.s * b.s;
+	const s: number = a.c * b.s - a.s * b.c;
+	const c: number = a.c *b.c + a.s * b.s;
 	return b2Atan2( s, c );
 }
 
@@ -624,32 +623,32 @@ function remainderf(x: number, y: number): number {
 }
 
 /// Rotate a vector
-B2_INLINE b2Vec2 b2RotateVector( b2Rot q, b2Vec2 v )
+function b2RotateVector(q: b2Rot, v: b2Vec2): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ q.c * v.x - q.s * v.y, q.s * v.x + q.c * v.y };
+	return new b2Vec2(q.c * v.x - q.s * v.y, q.s * v.x + q.c * v.y);
 }
 
 /// Inverse rotate a vector
-B2_INLINE b2Vec2 b2InvRotateVector( b2Rot q, b2Vec2 v )
+function b2InvRotateVector(q: b2Rot, v: b2Vec2): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ q.c * v.x + q.s * v.y, -q.s * v.x + q.c * v.y };
+	return new b2Vec2(q.c * v.x + q.s * v.y, -q.s * v.x + q.c * v.y);
 }
 
 /// Transform a point (e.g. local space to world space)
-B2_INLINE b2Vec2 b2TransformPoint( b2Transform t, const b2Vec2 p )
+function b2TransformPoint(t: b2Transform, p: b2Vec2): b2Vec2
 {
-	float x = ( t.q.c * p.x - t.q.s * p.y ) + t.p.x;
-	float y = ( t.q.s * p.x + t.q.c * p.y ) + t.p.y;
+	const x: number = ( t.q.c * p.x - t.q.s * p.y ) + t.p.x;
+	const y: number = ( t.q.s * p.x + t.q.c * p.y ) + t.p.y;
 
-	return B2_LITERAL( b2Vec2 ){ x, y };
+	return new b2Vec2(x, y);
 }
 
 /// Inverse transform a point (e.g. world space to local space)
-B2_INLINE b2Vec2 b2InvTransformPoint( b2Transform t, const b2Vec2 p )
+function b2InvTransformPoint(t: b2Transform, p: b2Vec2): b2Vec2
 {
-	float vx = p.x - t.p.x;
-	float vy = p.y - t.p.y;
-	return B2_LITERAL( b2Vec2 ){ t.q.c * vx + t.q.s * vy, -t.q.s * vx + t.q.c * vy };
+	const vx: number = p.x - t.p.x;
+	const vy: number = p.y - t.p.y;
+	return new b2Vec2(t.q.c * vx + t.q.s * vy, -t.q.s * vx + t.q.c * vy);
 }
 
 /// Multiply two transforms. If the result is applied to a point p local to frame B,
@@ -657,70 +656,70 @@ B2_INLINE b2Vec2 b2InvTransformPoint( b2Transform t, const b2Vec2 p )
 /// in the world frame.
 /// v2 = A.q.Rot(B.q.Rot(v1) + B.p) + A.p
 ///    = (A.q * B.q).Rot(v1) + A.q.Rot(B.p) + A.p
-B2_INLINE b2Transform b2MulTransforms( b2Transform A, b2Transform B )
+function b2MulTransforms(A: b2Transform, B: b2Transform): b2Transform
 {
-	b2Transform C;
-	C.q = b2MulRot( A.q, B.q );
-	C.p = b2Add( b2RotateVector( A.q, B.p ), A.p );
+	let C: b2Transform = b2Transform_identity;
+	C.q = b2MulRot(A.q, B.q);
+	C.p = b2Add(b2RotateVector(A.q, B.p), A.p);
 	return C;
 }
 
 /// Creates a transform that converts a local point in frame B to a local point in frame A.
 /// v2 = A.q' * (B.q * v1 + B.p - A.p)
 ///    = A.q' * B.q * v1 + A.q' * (B.p - A.p)
-B2_INLINE b2Transform b2InvMulTransforms( b2Transform A, b2Transform B )
+function b2InvMulTransforms(A: b2Transform, B: b2Transform): b2Transform
 {
-	b2Transform C;
-	C.q = b2InvMulRot( A.q, B.q );
-	C.p = b2InvRotateVector( A.q, b2Sub( B.p, A.p ) );
+	let C: b2Transform = b2Transform_identity;
+	C.q = b2InvMulRot(A.q, B.q);
+	C.p = b2InvRotateVector(A.q, b2Sub(B.p, A.p));
 	return C;
 }
 
 /// Multiply a 2-by-2 matrix times a 2D vector
-B2_INLINE b2Vec2 b2MulMV( b2Mat22 A, b2Vec2 v )
+function b2MulMV(A: b2Mat22, v: b2Vec2): b2Vec2
 {
-	b2Vec2 u = {
+	const u: b2Vec2 = new b2Vec2(
 		A.cx.x * v.x + A.cy.x * v.y,
 		A.cx.y * v.x + A.cy.y * v.y,
-	};
+	);
 	return u;
 }
 
 /// Get the inverse of a 2-by-2 matrix
-B2_INLINE b2Mat22 b2GetInverse22( b2Mat22 A )
+function b2GetInverse22(A: b2Mat22): b2Mat22
 {
-	float a = A.cx.x, b = A.cy.x, c = A.cx.y, d = A.cy.y;
-	float det = a * d - b * c;
-	if ( det != 0.0f )
+	const a: number = A.cx.x, b = A.cy.x, c = A.cx.y, d = A.cy.y;
+	let det: number = a * d - b * c;
+	if (det != 0)
 	{
-		det = 1.0f / det;
+		det = 1 / det;
 	}
 
-		b2Mat22 B = {
-			{ det * d, -det * c },
-			{ -det * b, det * a },
-		};
-		return B;
-	}
+	const B: b2Mat22 = new b2Mat22(
+		new b2Vec2(det * d, -det * c),
+		new b2Vec2(-det * b, det * a),
+	);
+	return B;
+}
 
 /// Solve A * x = b, where b is a column vector. This is more efficient
 /// than computing the inverse in one-shot cases.
-B2_INLINE b2Vec2 b2Solve22( b2Mat22 A, b2Vec2 b )
+function b2Solve22(A: b2Mat22, b: b2Vec2): b2Vec2
 {
-	float a11 = A.cx.x, a12 = A.cy.x, a21 = A.cx.y, a22 = A.cy.y;
-	float det = a11 * a22 - a12 * a21;
-	if ( det != 0.0f )
+	const a11: number = A.cx.x, a12 = A.cy.x, a21 = A.cx.y, a22 = A.cy.y;
+	let det = a11 * a22 - a12 * a21;
+	if (det != 0)
 	{
-		det = 1.0f / det;
+		det = 1 / det;
 	}
-	b2Vec2 x = { det * ( a22 * b.x - a12 * b.y ), det * ( a11 * b.y - a21 * b.x ) };
+	const x: b2Vec2 = new b2Vec2(det * (a22 * b.x - a12 * b.y), det * (a11 * b.y - a21 * b.x));
 	return x;
 }
 
 /// Does a fully contain b
-B2_INLINE bool b2AABB_Contains( b2AABB a, b2AABB b )
+function b2AABB_Contains(a: b2AABB, b: b2AABB): boolean
 {
-	bool s = true;
+	let s: boolean = true;
 	s = s && a.lowerBound.x <= b.lowerBound.x;
 	s = s && a.lowerBound.y <= b.lowerBound.y;
 	s = s && b.upperBound.x <= a.upperBound.x;
@@ -729,59 +728,59 @@ B2_INLINE bool b2AABB_Contains( b2AABB a, b2AABB b )
 }
 
 /// Get the center of the AABB.
-B2_INLINE b2Vec2 b2AABB_Center( b2AABB a )
+function b2AABB_Center(a: b2AABB): b2Vec2
 {
-	b2Vec2 b = { 0.5f * ( a.lowerBound.x + a.upperBound.x ), 0.5f * ( a.lowerBound.y + a.upperBound.y ) };
+	const b: b2Vec2 = new b2Vec2(0.5 * (a.lowerBound.x + a.upperBound.x), 0.5 * (a.lowerBound.y + a.upperBound.y));
 	return b;
 }
 
 /// Get the extents of the AABB (half-widths).
-B2_INLINE b2Vec2 b2AABB_Extents( b2AABB a )
+function b2AABB_Extents(a: b2AABB): b2Vec2
 {
-	b2Vec2 b = { 0.5f * ( a.upperBound.x - a.lowerBound.x ), 0.5f * ( a.upperBound.y - a.lowerBound.y ) };
+	const b: b2Vec2 = new b2Vec2(0.5 * (a.upperBound.x - a.lowerBound.x), 0.5 * (a.upperBound.y - a.lowerBound.y));
 	return b;
 }
 
 /// Union of two AABBs
-B2_INLINE b2AABB b2AABB_Union( b2AABB a, b2AABB b )
+function b2AABB_Union(a: b2AABB, b: b2AABB): b2AABB
 {
-	b2AABB c;
-	c.lowerBound.x = b2MinFloat( a.lowerBound.x, b.lowerBound.x );
-	c.lowerBound.y = b2MinFloat( a.lowerBound.y, b.lowerBound.y );
-	c.upperBound.x = b2MaxFloat( a.upperBound.x, b.upperBound.x );
-	c.upperBound.y = b2MaxFloat( a.upperBound.y, b.upperBound.y );
+	let c: b2AABB = new b2AABB(b2Vec2_zero, b2Vec2_zero);
+	c.lowerBound.x = Math.min(a.lowerBound.x, b.lowerBound.x);
+	c.lowerBound.y = Math.min(a.lowerBound.y, b.lowerBound.y);
+	c.upperBound.x = Math.max(a.upperBound.x, b.upperBound.x);
+	c.upperBound.y = Math.max(a.upperBound.y, b.upperBound.y);
 	return c;
 }
 
 /// Do a and b overlap
-B2_INLINE bool b2AABB_Overlaps( b2AABB a, b2AABB b )
+function b2AABB_Overlaps(a: b2AABB, b: b2AABB): boolean
 {
 	return !( b.lowerBound.x > a.upperBound.x || b.lowerBound.y > a.upperBound.y || a.lowerBound.x > b.upperBound.x ||
 			  a.lowerBound.y > b.upperBound.y );
 }
 
 /// Compute the bounding box of an array of circles
-B2_INLINE b2AABB b2MakeAABB( const b2Vec2* points, int count, float radius )
+function b2MakeAABB(points: b2Vec2[], count: number, radius: number): b2AABB
 {
-	B2_ASSERT( count > 0 );
-	b2AABB a = { points[0], points[0] };
-	for ( int i = 1; i < count; ++i )
+	console.assert(count > 0);
+	let a: b2AABB = new b2AABB(points[0], points[0]);
+	for (let i: number = 1; i < count; ++i)
 	{
-		a.lowerBound = b2Min( a.lowerBound, points[i] );
-		a.upperBound = b2Max( a.upperBound, points[i] );
+		a.lowerBound = b2Min(a.lowerBound, points[i]);
+		a.upperBound = b2Max(a.upperBound, points[i]);
 	}
 
-	b2Vec2 r = { radius, radius };
-	a.lowerBound = b2Sub( a.lowerBound, r );
-	a.upperBound = b2Add( a.upperBound, r );
+	const r: b2Vec2 = new b2Vec2(radius, radius);
+	a.lowerBound = b2Sub(a.lowerBound, r);
+	a.upperBound = b2Add(a.upperBound, r);
 
 	return a;
 }
 
 /// Signed separation of a point from a plane
-B2_INLINE float b2PlaneSeparation( b2Plane plane, b2Vec2 point )
+function b2PlaneSeparation(plane: b2Plane, point: b2Vec2): number
 {
-	return b2Dot( plane.normal, point ) - plane.offset;
+	return b2Dot(plane.normal, point) - plane.offset;
 }
 
 /// One-dimensional mass-spring-damper simulation. Returns the new velocity given the position and time step.
@@ -789,107 +788,21 @@ B2_INLINE float b2PlaneSeparation( b2Plane plane, b2Vec2 point )
 /// position += timeStep * newVelocity
 /// This drives towards a zero position. By using implicit integration we get a stable solution
 /// that doesn't require transcendental functions.
-B2_INLINE float b2SpringDamper( float hertz, float dampingRatio, float position, float velocity, float timeStep )
+function b2SpringDamper(hertz: number, dampingRatio: number, position: number, velocity: number, timeStep: number): number
 {
-	float omega = 2.0f * B2_PI * hertz;
-	float omegaH = omega * timeStep;
-	return ( velocity - omega * omegaH * position ) / ( 1.0f + 2.0f * dampingRatio * omegaH + omegaH * omegaH );
+	const omega: number = 2 * B2_PI * hertz;
+	const omegaH: number = omega * timeStep;
+	return (velocity - omega * omegaH * position) / (1 + 2 * dampingRatio * omegaH + omegaH * omegaH);
 }
-
-/// Box2D bases all length units on meters, but you may need different units for your game.
-/// You can set this value to use different units. This should be done at application startup
-/// and only modified once. Default value is 1.
-/// For example, if your game uses pixels for units you can use pixels for all length values
-/// sent to Box2D. There should be no extra cost. However, Box2D has some internal tolerances
-/// and thresholds that have been tuned for meters. By calling this function, Box2D is able
-/// to adjust those tolerances and thresholds to improve accuracy.
-/// A good rule of thumb is to pass the height of your player character to this function. So
-/// if your player character is 32 pixels high, then pass 32 to this function. Then you may
-/// confidently use pixels for all the length values sent to Box2D. All length values returned
-/// from Box2D will also be pixels because Box2D does not do any scaling internally.
-/// However, you are now on the hook for coming up with good values for gravity, density, and
-/// forces.
-/// @warning This must be modified before any calls to Box2D
-B2_API void b2SetLengthUnitsPerMeter( float lengthUnits );
-
-/// Get the current length units per meter.
-B2_API float b2GetLengthUnitsPerMeter( void );
-
-/**@}*/
-
-/**
- * @defgroup math_cpp C++ Math
- * @brief Math operator overloads for C++
- *
- * See math_functions.h for details.
- * @{
- */
-
-#ifdef __cplusplus
-
-/// Unary add one vector to another
-inline void operator+=( b2Vec2& a, b2Vec2 b )
-{
-	a.x += b.x;
-	a.y += b.y;
-}
-
-/// Unary subtract one vector from another
-inline void operator-=( b2Vec2& a, b2Vec2 b )
-{
-	a.x -= b.x;
-	a.y -= b.y;
-}
-
-/// Unary multiply a vector by a scalar
-inline void operator*=( b2Vec2& a, float b )
-{
-	a.x *= b;
-	a.y *= b;
-}
-
-/// Unary negate a vector
-inline b2Vec2 operator-( b2Vec2 a )
-{
-	return { -a.x, -a.y };
-}
-
-/// Binary vector addition
-inline b2Vec2 operator+( b2Vec2 a, b2Vec2 b )
-{
-	return { a.x + b.x, a.y + b.y };
-}
-
-/// Binary vector subtraction
-inline b2Vec2 operator-( b2Vec2 a, b2Vec2 b )
-{
-	return { a.x - b.x, a.y - b.y };
-}
-
-/// Binary scalar and vector multiplication
-inline b2Vec2 operator*( float a, b2Vec2 b )
-{
-	return { a * b.x, a * b.y };
-}
-
-/// Binary scalar and vector multiplication
-inline b2Vec2 operator*( b2Vec2 a, float b )
-{
-	return { a.x * b, a.y * b };
-}
-
-/// Binary vector equality
-inline bool operator==( b2Vec2 a, b2Vec2 b )
+//#endregion Math
+//#region Math Overloads
+function b2Equals(a: b2Vec2, b: b2Vec2): boolean
 {
 	return a.x == b.x && a.y == b.y;
 }
 
-/// Binary vector inequality
-inline bool operator!=( b2Vec2 a, b2Vec2 b )
+function b2NotEquals(a: b2Vec2, b: b2Vec2): boolean
 {
 	return a.x != b.x || a.y != b.y;
 }
-
-#endif
-
-/**@}*/
+//#endregion Math Overloads
