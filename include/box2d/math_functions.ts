@@ -157,7 +157,7 @@ function b2IsValidRotation(q: b2Rot): boolean
 		return false;
 	}
 
-	return b2IsNormalizedRot( q );
+	return b2IsNormalizedRot(q);
 }
 
 /// Is this a valid transform? Not NaN or infinity. Rotation is normalized.
@@ -171,59 +171,14 @@ function b2IsValidTransform(t: b2Transform)
 	return b2IsValidRotation(t.q);
 }
 
-/// Is this a valid bounding box? Not Nan or infinity. Upper bound greater than or equal to lower bound.
-B2_API bool b2IsValidAABB( b2AABB aabb );
-
 /// Is this a valid plane? Normal is a unit vector. Not Nan or infinity.
-bool b2IsValidPlane( b2Plane a )
+function b2IsValidPlane(a: b2Plane): boolean
 {
-	return b2IsValidVec2( a.normal ) && b2IsNormalized( a.normal ) && b2IsValidFloat( a.offset );
-}
-
-/// @return the minimum of two integers
-B2_INLINE int b2MinInt( int a, int b )
-{
-	return a < b ? a : b;
-}
-
-/// @return the maximum of two integers
-B2_INLINE int b2MaxInt( int a, int b )
-{
-	return a > b ? a : b;
-}
-
-/// @return the absolute value of an integer
-B2_INLINE int b2AbsInt( int a )
-{
-	return a < 0 ? -a : a;
-}
-
-/// @return an integer clamped between a lower and upper bound
-B2_INLINE int b2ClampInt( int a, int lower, int upper )
-{
-	return a < lower ? lower : ( a > upper ? upper : a );
-}
-
-/// @return the minimum of two floats
-B2_INLINE float b2MinFloat( float a, float b )
-{
-	return a < b ? a : b;
-}
-
-/// @return the maximum of two floats
-B2_INLINE float b2MaxFloat( float a, float b )
-{
-	return a > b ? a : b;
-}
-
-/// @return the absolute value of a float
-B2_INLINE float b2AbsFloat( float a )
-{
-	return a < 0 ? -a : a;
+	return b2IsValidVec2(a.normal) && b2IsNormalized(a.normal) && b2IsValidFloat(a.offset);
 }
 
 /// @return a float clamped between a lower and upper bound
-B2_INLINE float b2ClampFloat( float a, float lower, float upper )
+function b2ClampFloat(a: number, lower: number, upper: number): number
 {
 	return a < lower ? lower : ( a > upper ? upper : a );
 }
@@ -232,175 +187,248 @@ B2_INLINE float b2ClampFloat( float a, float lower, float upper )
 /// This is hand coded for cross-platform determinism. The atan2f
 /// function in the standard library is not cross-platform deterministic.
 ///	Accurate to around 0.0023 degrees
-B2_API float b2Atan2( float y, float x );
+// https://stackoverflow.com/questions/46210708/atan2-approximation-with-11bits-in-mantissa-on-x86with-sse2-and-armwith-vfpv4
+function b2Atan2(y: number, x: number): number
+{
+	// Added check for (0,0) to match atan2f and avoid NaN
+	if (x == 0 && y == 0)
+	{
+		return 0;
+	}
+
+	const ax: number = Math.abs(x);
+	const ay: number = Math.abs(y);
+	const mx: number = Math.max(ay, ax);
+	const mn: number = Math.min(ay, ax);
+	const a: number = mn / mx;
+
+	// Minimax polynomial approximation to atan(a) on [0,1]
+	const s: number = a * a;
+	const c: number = s * a;
+	const q: number = s * s;
+	let r: number = 0.024840285 * q + 0.18681418;
+	const t: number = -0.094097948 * q - 0.33213072;
+	r = r * s + t;
+	r = r * c + a;
+
+	// Map to full circle
+	if (ay > ax)
+	{
+		r = 1.57079637 - r;
+	}
+
+	if (x < 0)
+	{
+		r = 3.14159274 - r;
+	}
+
+	if (y < 0)
+	{
+		r = -r;
+	}
+
+	return r;
+}
 
 /// Compute the cosine and sine of an angle in radians. Implemented
 /// for cross-platform determinism.
-B2_API b2CosSin b2ComputeCosSin( float radians );
+function b2ComputeCosSin(radians: number): b2CosSin
+{
+	const x: number = b2UnwindAngle(radians);
+	const pi2: number = B2_PI * B2_PI;
+
+	// cosine needs angle in [-pi/2, pi/2]
+	let c: number;
+	if ( x < -0.5 * B2_PI )
+	{
+		const y: number = x + B2_PI;
+		const y2: number = y * y;
+		c = -( pi2 - 4 * y2 ) / ( pi2 + y2 );
+	}
+	else if (x > 0.5 * B2_PI)
+	{
+		const y: number = x - B2_PI;
+		const y2: number = y * y;
+		c = -(pi2 - 4 * y2) / (pi2 + y2);
+	}
+	else
+	{
+		const y2: number = x * x;
+		c = (pi2 - 4 * y2) / (pi2 + y2);
+	}
+
+	// sine needs angle in [0, pi]
+	let s: number;
+	if (x < 0)
+	{
+		const y: number = x + B2_PI;
+		s = -16 * y * (B2_PI - y) / (5 * pi2 - 4 * y * (B2_PI - y));
+	}
+	else
+	{
+		s = 16 * x * (B2_PI - x) / (5 * pi2 - 4 * x * (B2_PI - x));
+	}
+
+	const mag: number = Math.sqrt(s * s + c * c);
+	const invMag: number = mag > 0 ? 1 / mag : 0;
+	const cs: b2CosSin = new b2CosSin(c * invMag, s * invMag);
+	return cs;
+}
 
 /// Vector dot product
-B2_INLINE float b2Dot( b2Vec2 a, b2Vec2 b )
+function b2Dot(a: b2Vec2, b: b2Vec2): number
 {
 	return a.x * b.x + a.y * b.y;
 }
 
 /// Vector cross product. In 2D this yields a scalar.
-B2_INLINE float b2Cross( b2Vec2 a, b2Vec2 b )
+function b2Cross(a: b2Vec2, b: b2Vec2): number
 {
 	return a.x * b.y - a.y * b.x;
 }
 
 /// Perform the cross product on a vector and a scalar. In 2D this produces a vector.
-B2_INLINE b2Vec2 b2CrossVS( b2Vec2 v, float s )
+function b2CrossVS(v: b2Vec2, s: number): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ s * v.y, -s * v.x };
+	return new b2Vec2(s * v.y, -s * v.x);
 }
 
 /// Perform the cross product on a scalar and a vector. In 2D this produces a vector.
-B2_INLINE b2Vec2 b2CrossSV( float s, b2Vec2 v )
+function b2CrossSV(s: number, v: b2Vec2): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ -s * v.y, s * v.x };
+	return new b2Vec2(-s * v.y, s * v.x);
 }
 
 /// Get a left pointing perpendicular vector. Equivalent to b2CrossSV(1.0f, v)
-B2_INLINE b2Vec2 b2LeftPerp( b2Vec2 v )
+function b2LeftPerp(v: b2Vec2): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ -v.y, v.x };
+	return new b2Vec2(-v.y, v.x);
 }
 
 /// Get a right pointing perpendicular vector. Equivalent to b2CrossVS(v, 1.0f)
-B2_INLINE b2Vec2 b2RightPerp( b2Vec2 v )
+function b2RightPerp(v: b2Vec2): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ v.y, -v.x };
+	return new b2Vec2(v.y, -v.x);
 }
 
 /// Vector addition
-B2_INLINE b2Vec2 b2Add( b2Vec2 a, b2Vec2 b )
+function b2Add(a: b2Vec2, b: b2Vec2): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ a.x + b.x, a.y + b.y };
+	return new b2Vec2(a.x + b.x, a.y + b.y);
 }
 
 /// Vector subtraction
-B2_INLINE b2Vec2 b2Sub( b2Vec2 a, b2Vec2 b )
+function b2Sub(a: b2Vec2, b: b2Vec2): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ a.x - b.x, a.y - b.y };
+	return new b2Vec2(a.x - b.x, a.y - b.y);
 }
 
 /// Vector negation
-B2_INLINE b2Vec2 b2Neg( b2Vec2 a )
+function b2Neg(a: b2Vec2): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ -a.x, -a.y };
+	return new b2Vec2(-a.x, -a.y);
 }
 
 /// Vector linear interpolation
 /// https://fgiesen.wordpress.com/2012/08/15/linear-interpolation-past-present-and-future/
-B2_INLINE b2Vec2 b2Lerp( b2Vec2 a, b2Vec2 b, float t )
+function b2Lerp(a: b2Vec2, b: b2Vec2, t: number): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ ( 1.0f - t ) * a.x + t * b.x, ( 1.0f - t ) * a.y + t * b.y };
+	return new b2Vec2((1 - t) * a.x + t * b.x, (1 - t) * a.y + t * b.y);
 }
 
 /// Component-wise multiplication
-B2_INLINE b2Vec2 b2Mul( b2Vec2 a, b2Vec2 b )
+function b2Mul(a: b2Vec2, b: b2Vec2): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ a.x * b.x, a.y * b.y };
+	return new b2Vec2(a.x * b.x, a.y * b.y);
 }
 
 /// Multiply a scalar and vector
-B2_INLINE b2Vec2 b2MulSV( float s, b2Vec2 v )
+function b2MulSV(s: number, v: b2Vec2): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ s * v.x, s * v.y };
+	return new b2Vec2(s * v.x, s * v.y);
 }
 
 /// a + s * b
-B2_INLINE b2Vec2 b2MulAdd( b2Vec2 a, float s, b2Vec2 b )
+function b2MulAdd(a: b2Vec2, s: number, b: b2Vec2): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ a.x + s * b.x, a.y + s * b.y };
+	return new b2Vec2(a.x + s * b.x, a.y + s * b.y);
 }
 
 /// a - s * b
-B2_INLINE b2Vec2 b2MulSub( b2Vec2 a, float s, b2Vec2 b )
+function b2MulSub(a: b2Vec2, s: number, b: b2Vec2): b2Vec2
 {
-	return B2_LITERAL( b2Vec2 ){ a.x - s * b.x, a.y - s * b.y };
+	return new b2Vec2(a.x - s * b.x, a.y - s * b.y);
 }
 
 /// Component-wise absolute vector
-B2_INLINE b2Vec2 b2Abs( b2Vec2 a )
+function b2Abs(a: b2Vec2): b2Vec2
 {
-	b2Vec2 b;
-	b.x = b2AbsFloat( a.x );
-	b.y = b2AbsFloat( a.y );
-	return b;
+	return new b2Vec2(Math.abs(a.x), Math.abs(a.y));
 }
 
 /// Component-wise minimum vector
-B2_INLINE b2Vec2 b2Min( b2Vec2 a, b2Vec2 b )
+function b2Min(a: b2Vec2, b: b2Vec2): b2Vec2
 {
-	b2Vec2 c;
-	c.x = b2MinFloat( a.x, b.x );
-	c.y = b2MinFloat( a.y, b.y );
-	return c;
+	return new b2Vec2(Math.min(a.x, b.x), Math.min(a.y, b.y));
 }
 
 /// Component-wise maximum vector
-B2_INLINE b2Vec2 b2Max( b2Vec2 a, b2Vec2 b )
+function b2Max(a: b2Vec2, b: b2Vec2): b2Vec2
 {
-	b2Vec2 c;
-	c.x = b2MaxFloat( a.x, b.x );
-	c.y = b2MaxFloat( a.y, b.y );
-	return c;
+	return new b2Vec2(Math.max(a.x, b.x), Math.max(a.y, b.y));
 }
 
 /// Component-wise clamp vector v into the range [a, b]
-B2_INLINE b2Vec2 b2Clamp( b2Vec2 v, b2Vec2 a, b2Vec2 b )
+function b2Clamp(v: b2Vec2, a: b2Vec2, b: b2Vec2): b2Vec2
 {
-	b2Vec2 c;
+	let c: b2Vec2 = b2Vec2_zero;
 	c.x = b2ClampFloat( v.x, a.x, b.x );
 	c.y = b2ClampFloat( v.y, a.y, b.y );
 	return c;
 }
 
 /// Get the length of this vector (the norm)
-B2_INLINE float b2Length( b2Vec2 v )
+function b2Length(v: b2Vec2): number
 {
-	return sqrtf( v.x * v.x + v.y * v.y );
+	return Math.sqrt(v.x * v.x + v.y * v.y);
 }
 
 /// Get the distance between two points
-B2_INLINE float b2Distance( b2Vec2 a, b2Vec2 b )
+function b2Distance(a: b2Vec2, b: b2Vec2): number
 {
-	float dx = b.x - a.x;
-	float dy = b.y - a.y;
-	return sqrtf( dx * dx + dy * dy );
+	const dx: number = b.x - a.x;
+	const dy: number = b.y - a.y;
+	return Math.sqrt( dx * dx + dy * dy );
 }
 
 /// Convert a vector into a unit vector if possible, otherwise returns the zero vector.
 /// todo MSVC is not inlining this function in several places per warning 4710
-B2_INLINE b2Vec2 b2Normalize( b2Vec2 v )
+function b2Normalize(v: b2Vec2): b2Vec2
 {
-	float length = sqrtf( v.x * v.x + v.y * v.y );
-	if ( length < FLT_EPSILON )
+	const length: number = Math.sqrt( v.x * v.x + v.y * v.y );
+	if ( length < Number.EPSILON )
 	{
-		return B2_LITERAL( b2Vec2 ){ 0.0f, 0.0f };
+		return b2Vec2_zero;
 	}
 
-	float invLength = 1.0f / length;
-	b2Vec2 n = { invLength * v.x, invLength * v.y };
+	const invLength: number = 1 / length;
+	const n: b2Vec2 = new b2Vec2(invLength * v.x, invLength * v.y);
 	return n;
 }
 
 /// Determines if the provided vector is normalized (norm(a) == 1).
-B2_INLINE bool b2IsNormalized( b2Vec2 a )
+function b2IsNormalized(a: b2Vec2): boolean
 {
-	float aa = b2Dot( a, a );
-	return b2AbsFloat( 1.0f - aa ) < 100.0f * FLT_EPSILON;
+	const aa: number = b2Dot(a, a);
+	return Math.abs(1 - aa) < 100 * Number.EPSILON;
 }
 
 /// Convert a vector into a unit vector if possible, otherwise returns the zero vector. Also
 /// outputs the length.
-B2_INLINE b2Vec2 b2GetLengthAndNormalize( float* length, b2Vec2 v )
+function b2GetLengthAndNormalize(length: number, v: b2Vec2): b2Vec2
 {
 	*length = sqrtf( v.x * v.x + v.y * v.y );
-	if ( *length < FLT_EPSILON )
+	if ( *length < Number.EPSILON )
 	{
 		return B2_LITERAL( b2Vec2 ){ 0.0f, 0.0f };
 	}
@@ -411,11 +439,11 @@ B2_INLINE b2Vec2 b2GetLengthAndNormalize( float* length, b2Vec2 v )
 }
 
 /// Normalize rotation
-B2_INLINE b2Rot b2NormalizeRot( b2Rot q )
+function b2NormalizeRot(q: b2Rot): b2Rot
 {
-	float mag = sqrtf( q.s * q.s + q.c * q.c );
-	float invMag = mag > 0.0f ? 1.0f / mag : 0.0f;
-	b2Rot qn = { q.c * invMag, q.s * invMag };
+	const mag: number = Math.sqrt( q.s * q.s + q.c * q.c );
+	const invMag: number = mag > 0 ? 1 / mag : 0;
+	const qn: b2Rot = new b2Rot(q.c * invMag, q.s * invMag);
 	return qn;
 }
 
@@ -466,11 +494,11 @@ B2_INLINE b2Rot b2MakeRotFromUnitVector( b2Vec2 unitVector )
 B2_API b2Rot b2ComputeRotationBetweenUnitVectors( b2Vec2 v1, b2Vec2 v2 );
 
 /// Is this rotation normalized?
-B2_INLINE bool b2IsNormalizedRot( b2Rot q )
+function b2IsNormalizedRot(q: b2Rot): boolean
 {
 	// larger tolerance due to failure on mingw 32-bit
-	float qq = q.s * q.s + q.c * q.c;
-	return 1.0f - 0.0006f < qq && qq < 1.0f + 0.0006f;
+	const qq: number = q.s * q.s + q.c * q.c;
+	return 1 - 0.0006 < qq && qq < 1 + 0.0006;
 }
 
 /// Normalized linear interpolation
@@ -568,10 +596,31 @@ B2_INLINE float b2RelativeAngle( b2Rot a, b2Rot b )
 }
 
 /// Convert any angle into the range [-pi, pi]
-B2_INLINE float b2UnwindAngle( float radians )
+function b2UnwindAngle(radians: number): number
 {
 	// Assuming this is deterministic
-	return remainderf( radians, 2.0f * B2_PI );
+	return remainderf(radians, 2 * B2_PI);
+}
+
+function remainderf(x: number, y: number): number {
+  if (y === 0) {
+    return NaN;
+  }
+
+  const quotient = x / y;
+
+  const roundedQuotient = Math.round(quotient);
+  if (Math.abs(quotient - roundedQuotient) === 0.5 && roundedQuotient % 2 !== 0) {
+    const roundedQuotientToEven = Math.floor(quotient);
+    const quotientDifference = quotient - roundedQuotientToEven;
+    const isExactlyHalfwayToEven = (quotientDifference === 0.5);
+    const evenQuotient = roundedQuotientToEven;
+    const oddQuotient = roundedQuotientToEven + 1;
+    const finalQuotient = isExactlyHalfwayToEven ? evenQuotient : oddQuotient;
+    return x - finalQuotient * y;
+  }
+
+  return x - roundedQuotient * y;
 }
 
 /// Rotate a vector
