@@ -1,114 +1,104 @@
 //#region Math
 /// 2D vector
 /// This can be used to represent a point or free vector
-class b2Vec2
-{
+export class b2Vec2 {
 	/// coordinates
 	public x: number;
-    public y: number;
+	public y: number;
 
-    constructor(x: number, y: number) {
-        this.x = x;
-        this.y = y;
-    }
+	constructor(x: number, y: number) {
+		this.x = x;
+		this.y = y;
+	}
 }
 
 /// Cosine and sine pair
 /// This uses a custom implementation designed for cross-platform determinism
-class b2CosSin
-{
+export class b2CosSin {
 	/// cosine and sine
 	public cosine: number;
 	public sine: number;
 
-    constructor(c: number, s: number) {
-        this.cosine = c;
-        this.sine = s;
-    }
+	constructor(c: number, s: number) {
+		this.cosine = c;
+		this.sine = s;
+	}
 }
 
 /// 2D rotation
 /// This is similar to using a complex number for rotation
-class b2Rot
-{
+export class b2Rot {
 	/// cosine and sine
 	public c: number;
-    public s: number;
+	public s: number;
 
-    constructor(c: number, s: number) {
-        this.c = c;
-        this.s = s;
-    }
+	constructor(c: number, s: number) {
+		this.c = c;
+		this.s = s;
+	}
 }
 
 /// A 2D rigid transform
-class b2Transform
-{
+export class b2Transform {
 	public p: b2Vec2;
 	public q: b2Rot;
 
-    constructor(p: b2Vec2, q: b2Rot) {
-        this.p = p;
-        this.q = q;
-    }
+	constructor(p: b2Vec2, q: b2Rot) {
+		this.p = p;
+		this.q = q;
+	}
 }
 
 /// A 2-by-2 Matrix
-class b2Mat22
-{
+export class b2Mat22 {
 	/// columns
-    public cx: b2Vec2;
-    public cy: b2Vec2;
-	
-    constructor(cx: b2Vec2, cy: b2Vec2) {
-        this.cx = cx;
-        this.cy = cy;
-    }
+	public cx: b2Vec2;
+	public cy: b2Vec2;
+
+	constructor(cx: b2Vec2, cy: b2Vec2) {
+		this.cx = cx;
+		this.cy = cy;
+	}
 }
 
 /// Axis-aligned bounding box
-class b2AABB
-{
+export class b2AABB {
 	public lowerBound: b2Vec2;
 	public upperBound: b2Vec2;
 
-    constructor(lb: b2Vec2, ub: b2Vec2) {
-        this.lowerBound = lb;
-        this.upperBound = ub;
-    }
+	constructor(lb: b2Vec2, ub: b2Vec2) {
+		this.lowerBound = lb;
+		this.upperBound = ub;
+	}
 }
 
 /// separation = dot(normal, point) - offset
-class b2Plane
-{
+export class b2Plane {
 	public normal: b2Vec2;
 	public offset: number;
 
-    constructor(n: b2Vec2, o: number) {
-        this.normal = n;
-        this.offset = o;
-    }
+	constructor(n: b2Vec2, o: number) {
+		this.normal = n;
+		this.offset = o;
+	}
 }
 // #endregion Math
 //#region Math
 /// https://en.wikipedia.org/wiki/Pi
-const B2_PI = 3.14159265359;
+export const B2_PI = 3.14159265359;
 
-const b2Vec2_zero: b2Vec2 = new b2Vec2(0, 0);
-const b2Rot_identity: b2Rot = new b2Rot(1, 0);
-const b2Transform_identity: b2Transform = new b2Transform(new b2Vec2(0, 0), new b2Rot(1, 0));
-const b2Mat22_zero: b2Mat22 = new b2Mat22(new b2Vec2(0, 0), new b2Vec2(0, 0));
+export const b2Vec2_zero: b2Vec2 = new b2Vec2(0, 0);
+export const b2Rot_identity: b2Rot = new b2Rot(1, 0);
+export const b2Transform_identity: b2Transform = new b2Transform(new b2Vec2(0, 0), new b2Rot(1, 0));
+export const b2Mat22_zero: b2Mat22 = new b2Mat22(new b2Vec2(0, 0), new b2Vec2(0, 0));
 
 /// Is this a valid number? Not NaN or infinity.
-function b2IsValidFloat(a: number): boolean
-{
-	if (isNaN(a))
-	{
+export function b2IsValidFloat(a: number): boolean {
+	if (isNaN(a)) {
 		return false;
 	}
 
-	if (isFinite(a))
-	{
+	if (isFinite(a)) {
 		return false;
 	}
 
@@ -116,15 +106,12 @@ function b2IsValidFloat(a: number): boolean
 }
 
 /// Is this a valid vector? Not NaN or infinity.
-function b2IsValidVec2(v: b2Vec2): boolean
-{
-	if (isNaN(v.x) || isNaN(v.y))
-	{
+export function b2IsValidVec2(v: b2Vec2): boolean {
+	if (isNaN(v.x) || isNaN(v.y)) {
 		return false;
 	}
 
-	if (isFinite(v.x) || isFinite(v.y))
-	{
+	if (isFinite(v.x) || isFinite(v.y)) {
 		return false;
 	}
 
@@ -132,15 +119,12 @@ function b2IsValidVec2(v: b2Vec2): boolean
 }
 
 /// Is this a valid rotation? Not NaN or infinity. Is normalized.
-function b2IsValidRotation(q: b2Rot): boolean
-{
-	if (isNaN(q.s) || isNaN(q.c))
-	{
+export function b2IsValidRotation(q: b2Rot): boolean {
+	if (isNaN(q.s) || isNaN(q.c)) {
 		return false;
 	}
 
-	if (isFinite(q.s) || isFinite(q.c))
-	{
+	if (isFinite(q.s) || isFinite(q.c)) {
 		return false;
 	}
 
@@ -148,10 +132,8 @@ function b2IsValidRotation(q: b2Rot): boolean
 }
 
 /// Is this a valid transform? Not NaN or infinity. Rotation is normalized.
-function b2IsValidTransform(t: b2Transform)
-{
-	if (b2IsValidVec2(t.p) == false)
-	{
+export function b2IsValidTransform(t: b2Transform) {
+	if (b2IsValidVec2(t.p) == false) {
 		return false;
 	}
 
@@ -159,15 +141,13 @@ function b2IsValidTransform(t: b2Transform)
 }
 
 /// Is this a valid plane? Normal is a unit vector. Not Nan or infinity.
-function b2IsValidPlane(a: b2Plane): boolean
-{
+export function b2IsValidPlane(a: b2Plane): boolean {
 	return b2IsValidVec2(a.normal) && b2IsNormalized(a.normal) && b2IsValidFloat(a.offset);
 }
 
 /// @return a float clamped between a lower and upper bound
-function b2ClampFloat(a: number, lower: number, upper: number): number
-{
-	return a < lower ? lower : ( a > upper ? upper : a );
+export function b2ClampFloat(a: number, lower: number, upper: number): number {
+	return a < lower ? lower : (a > upper ? upper : a);
 }
 
 /// Compute an approximate arctangent in the range [-pi, pi]
@@ -175,11 +155,9 @@ function b2ClampFloat(a: number, lower: number, upper: number): number
 /// function in the standard library is not cross-platform deterministic.
 ///	Accurate to around 0.0023 degrees
 // https://stackoverflow.com/questions/46210708/atan2-approximation-with-11bits-in-mantissa-on-x86with-sse2-and-armwith-vfpv4
-function b2Atan2(y: number, x: number): number
-{
+export function b2Atan2(y: number, x: number): number {
 	// Added check for (0,0) to match atan2f and avoid NaN
-	if (x == 0 && y == 0)
-	{
+	if (x == 0 && y == 0) {
 		return 0;
 	}
 
@@ -199,18 +177,15 @@ function b2Atan2(y: number, x: number): number
 	r = r * c + a;
 
 	// Map to full circle
-	if (ay > ax)
-	{
+	if (ay > ax) {
 		r = 1.57079637 - r;
 	}
 
-	if (x < 0)
-	{
+	if (x < 0) {
 		r = 3.14159274 - r;
 	}
 
-	if (y < 0)
-	{
+	if (y < 0) {
 		r = -r;
 	}
 
@@ -219,40 +194,34 @@ function b2Atan2(y: number, x: number): number
 
 /// Compute the cosine and sine of an angle in radians. Implemented
 /// for cross-platform determinism.
-function b2ComputeCosSin(radians: number): b2CosSin
-{
+export function b2ComputeCosSin(radians: number): b2CosSin {
 	const x: number = b2UnwindAngle(radians);
 	const pi2: number = B2_PI * B2_PI;
 
 	// cosine needs angle in [-pi/2, pi/2]
 	let c: number;
-	if ( x < -0.5 * B2_PI )
-	{
+	if (x < -0.5 * B2_PI) {
 		const y: number = x + B2_PI;
 		const y2: number = y * y;
-		c = -( pi2 - 4 * y2 ) / ( pi2 + y2 );
+		c = -(pi2 - 4 * y2) / (pi2 + y2);
 	}
-	else if (x > 0.5 * B2_PI)
-	{
+	else if (x > 0.5 * B2_PI) {
 		const y: number = x - B2_PI;
 		const y2: number = y * y;
 		c = -(pi2 - 4 * y2) / (pi2 + y2);
 	}
-	else
-	{
+	else {
 		const y2: number = x * x;
 		c = (pi2 - 4 * y2) / (pi2 + y2);
 	}
 
 	// sine needs angle in [0, pi]
 	let s: number;
-	if (x < 0)
-	{
+	if (x < 0) {
 		const y: number = x + B2_PI;
 		s = -16 * y * (B2_PI - y) / (5 * pi2 - 4 * y * (B2_PI - y));
 	}
-	else
-	{
+	else {
 		s = 16 * x * (B2_PI - x) / (5 * pi2 - 4 * x * (B2_PI - x));
 	}
 
@@ -263,143 +232,120 @@ function b2ComputeCosSin(radians: number): b2CosSin
 }
 
 /// Vector dot product
-function b2Dot(a: b2Vec2, b: b2Vec2): number
-{
+export function b2Dot(a: b2Vec2, b: b2Vec2): number {
 	return a.x * b.x + a.y * b.y;
 }
 
 /// Vector cross product. In 2D this yields a scalar.
-function b2Cross(a: b2Vec2, b: b2Vec2): number
-{
+export function b2Cross(a: b2Vec2, b: b2Vec2): number {
 	return a.x * b.y - a.y * b.x;
 }
 
 /// Perform the cross product on a vector and a scalar. In 2D this produces a vector.
-function b2CrossVS(v: b2Vec2, s: number): b2Vec2
-{
+export function b2CrossVS(v: b2Vec2, s: number): b2Vec2 {
 	return new b2Vec2(s * v.y, -s * v.x);
 }
 
 /// Perform the cross product on a scalar and a vector. In 2D this produces a vector.
-function b2CrossSV(s: number, v: b2Vec2): b2Vec2
-{
+export function b2CrossSV(s: number, v: b2Vec2): b2Vec2 {
 	return new b2Vec2(-s * v.y, s * v.x);
 }
 
 /// Get a left pointing perpendicular vector. Equivalent to b2CrossSV(1.0f, v)
-function b2LeftPerp(v: b2Vec2): b2Vec2
-{
+export function b2LeftPerp(v: b2Vec2): b2Vec2 {
 	return new b2Vec2(-v.y, v.x);
 }
 
 /// Get a right pointing perpendicular vector. Equivalent to b2CrossVS(v, 1.0f)
-function b2RightPerp(v: b2Vec2): b2Vec2
-{
+export function b2RightPerp(v: b2Vec2): b2Vec2 {
 	return new b2Vec2(v.y, -v.x);
 }
 
 /// Vector addition
-function b2Add(a: b2Vec2, b: b2Vec2): b2Vec2
-{
+export function b2Add(a: b2Vec2, b: b2Vec2): b2Vec2 {
 	return new b2Vec2(a.x + b.x, a.y + b.y);
 }
 
 /// Vector subtraction
-function b2Sub(a: b2Vec2, b: b2Vec2): b2Vec2
-{
+export function b2Sub(a: b2Vec2, b: b2Vec2): b2Vec2 {
 	return new b2Vec2(a.x - b.x, a.y - b.y);
 }
 
 /// Vector negation
-function b2Neg(a: b2Vec2): b2Vec2
-{
+export function b2Neg(a: b2Vec2): b2Vec2 {
 	return new b2Vec2(-a.x, -a.y);
 }
 
 /// Vector linear interpolation
 /// https://fgiesen.wordpress.com/2012/08/15/linear-interpolation-past-present-and-future/
-function b2Lerp(a: b2Vec2, b: b2Vec2, t: number): b2Vec2
-{
+export function b2Lerp(a: b2Vec2, b: b2Vec2, t: number): b2Vec2 {
 	return new b2Vec2((1 - t) * a.x + t * b.x, (1 - t) * a.y + t * b.y);
 }
 
 /// Component-wise multiplication
-function b2Mul(a: b2Vec2, b: b2Vec2): b2Vec2
-{
+export function b2Mul(a: b2Vec2, b: b2Vec2): b2Vec2 {
 	return new b2Vec2(a.x * b.x, a.y * b.y);
 }
 
 /// Multiply a scalar and vector
-function b2MulSV(s: number, v: b2Vec2): b2Vec2
-{
+export function b2MulSV(s: number, v: b2Vec2): b2Vec2 {
 	return new b2Vec2(s * v.x, s * v.y);
 }
 
-function b2MulVS(v: b2Vec2, s: number): b2Vec2
-{
+export function b2MulVS(v: b2Vec2, s: number): b2Vec2 {
 	return new b2Vec2(v.x * s, v.y * s);
 }
 
 /// a + s * b
-function b2MulAdd(a: b2Vec2, s: number, b: b2Vec2): b2Vec2
-{
+export function b2MulAdd(a: b2Vec2, s: number, b: b2Vec2): b2Vec2 {
 	return new b2Vec2(a.x + s * b.x, a.y + s * b.y);
 }
 
 /// a - s * b
-function b2MulSub(a: b2Vec2, s: number, b: b2Vec2): b2Vec2
-{
+export function b2MulSub(a: b2Vec2, s: number, b: b2Vec2): b2Vec2 {
 	return new b2Vec2(a.x - s * b.x, a.y - s * b.y);
 }
 
 /// Component-wise absolute vector
-function b2Abs(a: b2Vec2): b2Vec2
-{
+export function b2Abs(a: b2Vec2): b2Vec2 {
 	return new b2Vec2(Math.abs(a.x), Math.abs(a.y));
 }
 
 /// Component-wise minimum vector
-function b2Min(a: b2Vec2, b: b2Vec2): b2Vec2
-{
+export function b2Min(a: b2Vec2, b: b2Vec2): b2Vec2 {
 	return new b2Vec2(Math.min(a.x, b.x), Math.min(a.y, b.y));
 }
 
 /// Component-wise maximum vector
-function b2Max(a: b2Vec2, b: b2Vec2): b2Vec2
-{
+export function b2Max(a: b2Vec2, b: b2Vec2): b2Vec2 {
 	return new b2Vec2(Math.max(a.x, b.x), Math.max(a.y, b.y));
 }
 
 /// Component-wise clamp vector v into the range [a, b]
-function b2Clamp(v: b2Vec2, a: b2Vec2, b: b2Vec2): b2Vec2
-{
+export function b2Clamp(v: b2Vec2, a: b2Vec2, b: b2Vec2): b2Vec2 {
 	let c: b2Vec2 = b2Vec2_zero;
-	c.x = b2ClampFloat( v.x, a.x, b.x );
-	c.y = b2ClampFloat( v.y, a.y, b.y );
+	c.x = b2ClampFloat(v.x, a.x, b.x);
+	c.y = b2ClampFloat(v.y, a.y, b.y);
 	return c;
 }
 
 /// Get the length of this vector (the norm)
-function b2Length(v: b2Vec2): number
-{
+export function b2Length(v: b2Vec2): number {
 	return Math.sqrt(v.x * v.x + v.y * v.y);
 }
 
 /// Get the distance between two points
-function b2Distance(a: b2Vec2, b: b2Vec2): number
-{
+export function b2Distance(a: b2Vec2, b: b2Vec2): number {
 	const dx: number = b.x - a.x;
 	const dy: number = b.y - a.y;
-	return Math.sqrt( dx * dx + dy * dy );
+	return Math.sqrt(dx * dx + dy * dy);
 }
 
 /// Convert a vector into a unit vector if possible, otherwise returns the zero vector.
 /// todo MSVC is not inlining this function in several places per warning 4710
-function b2Normalize(v: b2Vec2): b2Vec2
-{
-	const length: number = Math.sqrt( v.x * v.x + v.y * v.y );
-	if ( length < Number.EPSILON )
-	{
+export function b2Normalize(v: b2Vec2): b2Vec2 {
+	const length: number = Math.sqrt(v.x * v.x + v.y * v.y);
+	if (length < Number.EPSILON) {
 		return b2Vec2_zero;
 	}
 
@@ -409,19 +355,16 @@ function b2Normalize(v: b2Vec2): b2Vec2
 }
 
 /// Determines if the provided vector is normalized (norm(a) == 1).
-function b2IsNormalized(a: b2Vec2): boolean
-{
+export function b2IsNormalized(a: b2Vec2): boolean {
 	const aa: number = b2Dot(a, a);
 	return Math.abs(1 - aa) < 100 * Number.EPSILON;
 }
 
 /// Convert a vector into a unit vector if possible, otherwise returns the zero vector. Also
 /// outputs the length.
-function b2GetLengthAndNormalize(length: number, v: b2Vec2): [b2Vec2, number]
-{
-	length = Math.sqrt( v.x * v.x + v.y * v.y );
-	if (length < Number.EPSILON)
-	{
+export function b2GetLengthAndNormalize(length: number, v: b2Vec2): [b2Vec2, number] {
+	length = Math.sqrt(v.x * v.x + v.y * v.y);
+	if (length < Number.EPSILON) {
 		return [new b2Vec2(0, 0), 0];
 	}
 
@@ -431,9 +374,8 @@ function b2GetLengthAndNormalize(length: number, v: b2Vec2): [b2Vec2, number]
 }
 
 /// Normalize rotation
-function b2NormalizeRot(q: b2Rot): b2Rot
-{
-	const mag: number = Math.sqrt( q.s * q.s + q.c * q.c );
+export function b2NormalizeRot(q: b2Rot): b2Rot {
+	const mag: number = Math.sqrt(q.s * q.s + q.c * q.c);
 	const invMag: number = mag > 0 ? 1 / mag : 0;
 	const qn: b2Rot = new b2Rot(q.c * invMag, q.s * invMag);
 	return qn;
@@ -442,49 +384,43 @@ function b2NormalizeRot(q: b2Rot): b2Rot
 /// Integrate rotation from angular velocity
 /// @param q1 initial rotation
 /// @param deltaAngle the angular displacement in radians
-function b2IntegrateRotation(q1: b2Rot, deltaAngle: number): b2Rot
-{
+export function b2IntegrateRotation(q1: b2Rot, deltaAngle: number): b2Rot {
 	// dc/dt = -omega * sin(t)
 	// ds/dt = omega * cos(t)
 	// c2 = c1 - omega * h * s1
 	// s2 = s1 + omega * h * c1
 	const q2: b2Rot = new b2Rot(q1.c - deltaAngle * q1.s, q1.s + deltaAngle * q1.c);
-	const mag: number = Math.sqrt( q2.s * q2.s + q2.c * q2.c );
+	const mag: number = Math.sqrt(q2.s * q2.s + q2.c * q2.c);
 	const invMag: number = mag > 0 ? 1 / mag : 0;
 	const qn: b2Rot = new b2Rot(q2.c * invMag, q2.s * invMag);
 	return qn;
 }
 
 /// Get the length squared of this vector
-function b2LengthSquared(v: b2Vec2): number
-{
+export function b2LengthSquared(v: b2Vec2): number {
 	return v.x * v.x + v.y * v.y;
 }
 
 /// Get the distance squared between points
-function b2DistanceSquared(a: b2Vec2, b: b2Vec2): number
-{
+export function b2DistanceSquared(a: b2Vec2, b: b2Vec2): number {
 	const c: b2Vec2 = new b2Vec2(b.x - a.x, b.y - a.y);
 	return c.x * c.x + c.y * c.y;
 }
 
 /// Make a rotation using an angle in radians
-function b2MakeRot(radians: number): b2Rot
-{
+export function b2MakeRot(radians: number): b2Rot {
 	const cs: b2CosSin = b2ComputeCosSin(radians);
 	return new b2Rot(cs.cosine, cs.sine);
 }
 
 /// Make a rotation using a unit vector
-function b2MakeRotFromUnitVector(unitVector: b2Vec2): b2Rot
-{
+export function b2MakeRotFromUnitVector(unitVector: b2Vec2): b2Rot {
 	console.assert(b2IsNormalized(unitVector));
 	return new b2Rot(unitVector.x, unitVector.y);
 }
 
 /// Compute the rotation between two unit vectors
-function b2ComputeRotationBetweenUnitVectors(v1: b2Vec2, v2: b2Vec2): b2Rot
-{
+export function b2ComputeRotationBetweenUnitVectors(v1: b2Vec2, v2: b2Vec2): b2Rot {
 	console.assert(Math.abs(1 - b2Length(v1)) < 100 * Number.EPSILON);
 	console.assert(Math.abs(1 - b2Length(v2)) < 100 * Number.EPSILON);
 
@@ -495,8 +431,7 @@ function b2ComputeRotationBetweenUnitVectors(v1: b2Vec2, v2: b2Vec2): b2Rot
 }
 
 /// Is this rotation normalized?
-function b2IsNormalizedRot(q: b2Rot): boolean
-{
+export function b2IsNormalizedRot(q: b2Rot): boolean {
 	// larger tolerance due to failure on mingw 32-bit
 	const qq: number = q.s * q.s + q.c * q.c;
 	return 1 - 0.0006 < qq && qq < 1 + 0.0006;
@@ -505,15 +440,14 @@ function b2IsNormalizedRot(q: b2Rot): boolean
 /// Normalized linear interpolation
 /// https://fgiesen.wordpress.com/2012/08/15/linear-interpolation-past-present-and-future/
 ///	https://web.archive.org/web/20170825184056/http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/
-function b2NLerp(q1: b2Rot, q2: b2Rot, t: number): b2Rot
-{
+export function b2NLerp(q1: b2Rot, q2: b2Rot, t: number): b2Rot {
 	const omt: number = 1 - t;
 	const q: b2Rot = new b2Rot(
 		omt * q1.c + t * q2.c,
 		omt * q1.s + t * q2.s,
 	);
 
-	const mag: number = Math.sqrt( q.s * q.s + q.c * q.c );
+	const mag: number = Math.sqrt(q.s * q.s + q.c * q.c);
 	const invMag: number = mag > 0 ? 1 / mag : 0;
 	const qn: b2Rot = new b2Rot(q.c * invMag, q.s * invMag);
 	return qn;
@@ -523,8 +457,7 @@ function b2NLerp(q1: b2Rot, q2: b2Rot, t: number): b2Rot
 /// @param q1 initial rotation
 /// @param q2 final rotation
 /// @param inv_h inverse time step
-function b2ComputeAngularVelocity(q1: b2Rot, q2: b2Rot, inv_h: number): number
-{
+export function b2ComputeAngularVelocity(q1: b2Rot, q2: b2Rot, inv_h: number): number {
 	// ds/dt = omega * cos(t)
 	// dc/dt = -omega * sin(t)
 	// s2 = s1 + omega * h * c1
@@ -535,31 +468,27 @@ function b2ComputeAngularVelocity(q1: b2Rot, q2: b2Rot, inv_h: number): number
 	// omega * h = (c1 - c2) * s1 + (s2 - s1) * c1;
 	// omega * h = s1 * c1 - c2 * s1 + s2 * c1 - s1 * c1
 	// omega * h = s2 * c1 - c2 * s1 = sin(a2 - a1) ~= a2 - a1 for small delta
-	const omega: number = inv_h * ( q2.s * q1.c - q2.c * q1.s );
+	const omega: number = inv_h * (q2.s * q1.c - q2.c * q1.s);
 	return omega;
 }
 
 /// Get the angle in radians in the range [-pi, pi]
-function b2Rot_GetAngle(q: b2Rot): number
-{
-	return b2Atan2( q.s, q.c );
+export function b2Rot_GetAngle(q: b2Rot): number {
+	return b2Atan2(q.s, q.c);
 }
 
 /// Get the x-axis
-function b2Rot_GetXAxis(q: b2Rot): b2Vec2
-{
+export function b2Rot_GetXAxis(q: b2Rot): b2Vec2 {
 	return new b2Vec2(q.c, q.s);
 }
 
 /// Get the y-axis
-function b2Rot_GetYAxis(q: b2Rot): b2Vec2
-{
+export function b2Rot_GetYAxis(q: b2Rot): b2Vec2 {
 	return new b2Vec2(-q.s, q.c);
 }
 
 /// Multiply two rotations: q * r
-function b2MulRot(q: b2Rot, r: b2Rot): b2Rot
-{
+export function b2MulRot(q: b2Rot, r: b2Rot): b2Rot {
 	// [qc -qs] * [rc -rs] = [qc*rc-qs*rs -qc*rs-qs*rc]
 	// [qs  qc]   [rs  rc]   [qs*rc+qc*rs -qs*rs+qc*rc]
 	// s(q + r) = qs * rc + qc * rs
@@ -572,8 +501,7 @@ function b2MulRot(q: b2Rot, r: b2Rot): b2Rot
 
 /// Transpose multiply two rotations: inv(a) * b
 /// This rotates a vector local in frame b into a vector local in frame a
-function b2InvMulRot(a: b2Rot, b: b2Rot): b2Rot
-{
+export function b2InvMulRot(a: b2Rot, b: b2Rot): b2Rot {
 	// [ ac as] * [bc -bs] = [ac*bc+qs*bs -ac*bs+as*bc]
 	// [-as ac]   [bs  bc]   [-as*bc+ac*bs as*bs+ac*bc]
 	// s(a - b) = ac * bs - as * bc
@@ -585,67 +513,61 @@ function b2InvMulRot(a: b2Rot, b: b2Rot): b2Rot
 }
 
 /// Relative angle between a and b
-function b2RelativeAngle(a: b2Rot, b: b2Rot): number
-{
+export function b2RelativeAngle(a: b2Rot, b: b2Rot): number {
 	// sin(b - a) = bs * ac - bc * as
 	// cos(b - a) = bc * ac + bs * as
 	const s: number = a.c * b.s - a.s * b.c;
-	const c: number = a.c *b.c + a.s * b.s;
-	return b2Atan2( s, c );
+	const c: number = a.c * b.c + a.s * b.s;
+	return b2Atan2(s, c);
 }
 
 /// Convert any angle into the range [-pi, pi]
-function b2UnwindAngle(radians: number): number
-{
+export function b2UnwindAngle(radians: number): number {
 	// Assuming this is deterministic
 	return remainderf(radians, 2 * B2_PI);
 }
 
-function remainderf(x: number, y: number): number {
-  if (y === 0) {
-    return NaN;
-  }
+export function remainderf(x: number, y: number): number {
+	if (y === 0) {
+		return NaN;
+	}
 
-  const quotient = x / y;
+	const quotient = x / y;
 
-  const roundedQuotient = Math.round(quotient);
-  if (Math.abs(quotient - roundedQuotient) === 0.5 && roundedQuotient % 2 !== 0) {
-    const roundedQuotientToEven = Math.floor(quotient);
-    const quotientDifference = quotient - roundedQuotientToEven;
-    const isExactlyHalfwayToEven = (quotientDifference === 0.5);
-    const evenQuotient = roundedQuotientToEven;
-    const oddQuotient = roundedQuotientToEven + 1;
-    const finalQuotient = isExactlyHalfwayToEven ? evenQuotient : oddQuotient;
-    return x - finalQuotient * y;
-  }
+	const roundedQuotient = Math.round(quotient);
+	if (Math.abs(quotient - roundedQuotient) === 0.5 && roundedQuotient % 2 !== 0) {
+		const roundedQuotientToEven = Math.floor(quotient);
+		const quotientDifference = quotient - roundedQuotientToEven;
+		const isExactlyHalfwayToEven = (quotientDifference === 0.5);
+		const evenQuotient = roundedQuotientToEven;
+		const oddQuotient = roundedQuotientToEven + 1;
+		const finalQuotient = isExactlyHalfwayToEven ? evenQuotient : oddQuotient;
+		return x - finalQuotient * y;
+	}
 
-  return x - roundedQuotient * y;
+	return x - roundedQuotient * y;
 }
 
 /// Rotate a vector
-function b2RotateVector(q: b2Rot, v: b2Vec2): b2Vec2
-{
+export function b2RotateVector(q: b2Rot, v: b2Vec2): b2Vec2 {
 	return new b2Vec2(q.c * v.x - q.s * v.y, q.s * v.x + q.c * v.y);
 }
 
 /// Inverse rotate a vector
-function b2InvRotateVector(q: b2Rot, v: b2Vec2): b2Vec2
-{
+export function b2InvRotateVector(q: b2Rot, v: b2Vec2): b2Vec2 {
 	return new b2Vec2(q.c * v.x + q.s * v.y, -q.s * v.x + q.c * v.y);
 }
 
 /// Transform a point (e.g. local space to world space)
-function b2TransformPoint(t: b2Transform, p: b2Vec2): b2Vec2
-{
-	const x: number = ( t.q.c * p.x - t.q.s * p.y ) + t.p.x;
-	const y: number = ( t.q.s * p.x + t.q.c * p.y ) + t.p.y;
+export function b2TransformPoint(t: b2Transform, p: b2Vec2): b2Vec2 {
+	const x: number = (t.q.c * p.x - t.q.s * p.y) + t.p.x;
+	const y: number = (t.q.s * p.x + t.q.c * p.y) + t.p.y;
 
 	return new b2Vec2(x, y);
 }
 
 /// Inverse transform a point (e.g. world space to local space)
-function b2InvTransformPoint(t: b2Transform, p: b2Vec2): b2Vec2
-{
+export function b2InvTransformPoint(t: b2Transform, p: b2Vec2): b2Vec2 {
 	const vx: number = p.x - t.p.x;
 	const vy: number = p.y - t.p.y;
 	return new b2Vec2(t.q.c * vx + t.q.s * vy, -t.q.s * vx + t.q.c * vy);
@@ -656,8 +578,7 @@ function b2InvTransformPoint(t: b2Transform, p: b2Vec2): b2Vec2
 /// in the world frame.
 /// v2 = A.q.Rot(B.q.Rot(v1) + B.p) + A.p
 ///    = (A.q * B.q).Rot(v1) + A.q.Rot(B.p) + A.p
-function b2MulTransforms(A: b2Transform, B: b2Transform): b2Transform
-{
+export function b2MulTransforms(A: b2Transform, B: b2Transform): b2Transform {
 	let C: b2Transform = b2Transform_identity;
 	C.q = b2MulRot(A.q, B.q);
 	C.p = b2Add(b2RotateVector(A.q, B.p), A.p);
@@ -667,8 +588,7 @@ function b2MulTransforms(A: b2Transform, B: b2Transform): b2Transform
 /// Creates a transform that converts a local point in frame B to a local point in frame A.
 /// v2 = A.q' * (B.q * v1 + B.p - A.p)
 ///    = A.q' * B.q * v1 + A.q' * (B.p - A.p)
-function b2InvMulTransforms(A: b2Transform, B: b2Transform): b2Transform
-{
+export function b2InvMulTransforms(A: b2Transform, B: b2Transform): b2Transform {
 	let C: b2Transform = b2Transform_identity;
 	C.q = b2InvMulRot(A.q, B.q);
 	C.p = b2InvRotateVector(A.q, b2Sub(B.p, A.p));
@@ -676,8 +596,7 @@ function b2InvMulTransforms(A: b2Transform, B: b2Transform): b2Transform
 }
 
 /// Multiply a 2-by-2 matrix times a 2D vector
-function b2MulMV(A: b2Mat22, v: b2Vec2): b2Vec2
-{
+export function b2MulMV(A: b2Mat22, v: b2Vec2): b2Vec2 {
 	const u: b2Vec2 = new b2Vec2(
 		A.cx.x * v.x + A.cy.x * v.y,
 		A.cx.y * v.x + A.cy.y * v.y,
@@ -686,12 +605,10 @@ function b2MulMV(A: b2Mat22, v: b2Vec2): b2Vec2
 }
 
 /// Get the inverse of a 2-by-2 matrix
-function b2GetInverse22(A: b2Mat22): b2Mat22
-{
+export function b2GetInverse22(A: b2Mat22): b2Mat22 {
 	const a: number = A.cx.x, b = A.cy.x, c = A.cx.y, d = A.cy.y;
 	let det: number = a * d - b * c;
-	if (det != 0)
-	{
+	if (det != 0) {
 		det = 1 / det;
 	}
 
@@ -704,12 +621,10 @@ function b2GetInverse22(A: b2Mat22): b2Mat22
 
 /// Solve A * x = b, where b is a column vector. This is more efficient
 /// than computing the inverse in one-shot cases.
-function b2Solve22(A: b2Mat22, b: b2Vec2): b2Vec2
-{
+export function b2Solve22(A: b2Mat22, b: b2Vec2): b2Vec2 {
 	const a11: number = A.cx.x, a12 = A.cy.x, a21 = A.cx.y, a22 = A.cy.y;
 	let det = a11 * a22 - a12 * a21;
-	if (det != 0)
-	{
+	if (det != 0) {
 		det = 1 / det;
 	}
 	const x: b2Vec2 = new b2Vec2(det * (a22 * b.x - a12 * b.y), det * (a11 * b.y - a21 * b.x));
@@ -717,8 +632,7 @@ function b2Solve22(A: b2Mat22, b: b2Vec2): b2Vec2
 }
 
 /// Does a fully contain b
-function b2AABB_Contains(a: b2AABB, b: b2AABB): boolean
-{
+export function b2AABB_Contains(a: b2AABB, b: b2AABB): boolean {
 	let s: boolean = true;
 	s = s && a.lowerBound.x <= b.lowerBound.x;
 	s = s && a.lowerBound.y <= b.lowerBound.y;
@@ -728,22 +642,19 @@ function b2AABB_Contains(a: b2AABB, b: b2AABB): boolean
 }
 
 /// Get the center of the AABB.
-function b2AABB_Center(a: b2AABB): b2Vec2
-{
+export function b2AABB_Center(a: b2AABB): b2Vec2 {
 	const b: b2Vec2 = new b2Vec2(0.5 * (a.lowerBound.x + a.upperBound.x), 0.5 * (a.lowerBound.y + a.upperBound.y));
 	return b;
 }
 
 /// Get the extents of the AABB (half-widths).
-function b2AABB_Extents(a: b2AABB): b2Vec2
-{
+export function b2AABB_Extents(a: b2AABB): b2Vec2 {
 	const b: b2Vec2 = new b2Vec2(0.5 * (a.upperBound.x - a.lowerBound.x), 0.5 * (a.upperBound.y - a.lowerBound.y));
 	return b;
 }
 
 /// Union of two AABBs
-function b2AABB_Union(a: b2AABB, b: b2AABB): b2AABB
-{
+export function b2AABB_Union(a: b2AABB, b: b2AABB): b2AABB {
 	let c: b2AABB = new b2AABB(b2Vec2_zero, b2Vec2_zero);
 	c.lowerBound.x = Math.min(a.lowerBound.x, b.lowerBound.x);
 	c.lowerBound.y = Math.min(a.lowerBound.y, b.lowerBound.y);
@@ -753,19 +664,16 @@ function b2AABB_Union(a: b2AABB, b: b2AABB): b2AABB
 }
 
 /// Do a and b overlap
-function b2AABB_Overlaps(a: b2AABB, b: b2AABB): boolean
-{
-	return !( b.lowerBound.x > a.upperBound.x || b.lowerBound.y > a.upperBound.y || a.lowerBound.x > b.upperBound.x ||
-			  a.lowerBound.y > b.upperBound.y );
+export function b2AABB_Overlaps(a: b2AABB, b: b2AABB): boolean {
+	return !(b.lowerBound.x > a.upperBound.x || b.lowerBound.y > a.upperBound.y || a.lowerBound.x > b.upperBound.x ||
+		a.lowerBound.y > b.upperBound.y);
 }
 
 /// Compute the bounding box of an array of circles
-function b2MakeAABB(points: b2Vec2[], count: number, radius: number): b2AABB
-{
+export function b2MakeAABB(points: b2Vec2[], count: number, radius: number): b2AABB {
 	console.assert(count > 0);
 	let a: b2AABB = new b2AABB(points[0], points[0]);
-	for (let i: number = 1; i < count; ++i)
-	{
+	for (let i: number = 1; i < count; ++i) {
 		a.lowerBound = b2Min(a.lowerBound, points[i]);
 		a.upperBound = b2Max(a.upperBound, points[i]);
 	}
@@ -778,8 +686,7 @@ function b2MakeAABB(points: b2Vec2[], count: number, radius: number): b2AABB
 }
 
 /// Signed separation of a point from a plane
-function b2PlaneSeparation(plane: b2Plane, point: b2Vec2): number
-{
+export function b2PlaneSeparation(plane: b2Plane, point: b2Vec2): number {
 	return b2Dot(plane.normal, point) - plane.offset;
 }
 
@@ -788,21 +695,18 @@ function b2PlaneSeparation(plane: b2Plane, point: b2Vec2): number
 /// position += timeStep * newVelocity
 /// This drives towards a zero position. By using implicit integration we get a stable solution
 /// that doesn't require transcendental functions.
-function b2SpringDamper(hertz: number, dampingRatio: number, position: number, velocity: number, timeStep: number): number
-{
+export function b2SpringDamper(hertz: number, dampingRatio: number, position: number, velocity: number, timeStep: number): number {
 	const omega: number = 2 * B2_PI * hertz;
 	const omegaH: number = omega * timeStep;
 	return (velocity - omega * omegaH * position) / (1 + 2 * dampingRatio * omegaH + omegaH * omegaH);
 }
 //#endregion Math
 //#region Math Overloads
-function b2Equals(a: b2Vec2, b: b2Vec2): boolean
-{
+export function b2Equals(a: b2Vec2, b: b2Vec2): boolean {
 	return a.x == b.x && a.y == b.y;
 }
 
-function b2NotEquals(a: b2Vec2, b: b2Vec2): boolean
-{
+export function b2NotEquals(a: b2Vec2, b: b2Vec2): boolean {
 	return a.x != b.x || a.y != b.y;
 }
 //#endregion Math Overloads
