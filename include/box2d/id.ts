@@ -84,12 +84,12 @@ export class b2ContactId
 
 /// Use these to make your identifiers null.
 /// You may also use zero initialization to get null.
-export static const b2_nullWorldId: b2WorldId = new b2WorldId(0, 0);
-export static const b2_nullBodyId: b2BodyId = new b2BodyId(0, 0, 0);
-export static const b2_nullShapeId: b2ShapeId = new b2ShapeId(0, 0, 0);
-export static const b2_nullChainId: b2ChainId = new b2ChainId(0, 0, 0);
-export static const b2_nullJointId: b2JointId = new b2JointId(0, 0, 0);
-export static const b2_nullContactId: b2ContactId = new b2ContactId(0, 0, 0, 0);
+export const b2_nullWorldId: b2WorldId = new b2WorldId(0, 0);
+export const b2_nullBodyId: b2BodyId = new b2BodyId(0, 0, 0);
+export const b2_nullShapeId: b2ShapeId = new b2ShapeId(0, 0, 0);
+export const b2_nullChainId: b2ChainId = new b2ChainId(0, 0, 0);
+export const b2_nullJointId: b2JointId = new b2JointId(0, 0, 0);
+export const b2_nullContactId: b2ContactId = new b2ContactId(0, 0, 0, 0);
 
 /// Macro to determine if any id is null.
 export function B2_IS_NULL(id: b2WorldId | b2BodyId | b2ShapeId | b2ChainId | b2JointId | b2ChainId): boolean
@@ -123,74 +123,74 @@ export function b2LoadWorldId(x: number): b2WorldId
 }
 
 /// Store a body id into a uint64_t.
-export function b2StoreBodyId(id: b2BodyId): number
+export function b2StoreBodyId(id: b2BodyId): bigint
 {
-	return (id.index1 << 32) | (id.world0 << 16) | id.generation;
+	return ((BigInt(id.index1) << 32n) | (BigInt(id.world0) << 16n) | BigInt(id.generation));
 }
 
 /// Load a uint64_t into a body id.
-export function b2LoadBodyId(x: number): b2BodyId
+export function b2LoadBodyId(x: bigint): b2BodyId
 {
-	const id: b2BodyId = new b2BodyId(x >> 32, x >> 16, x);
+	const id: b2BodyId = new b2BodyId(Number(x >> 32n), Number((x >> 16n) & 0xFFFFn), Number(x & 0xFFFFn));
 	return id;
 }
 
 /// Store a shape id into a uint64_t.
-export function b2StoreShapeId(id: b2ShapeId): number
+export function b2StoreShapeId(id: b2ShapeId): bigint
 {
-	return (id.index1 << 32) | (id.world0 << 16) | id.generation;
+	return ((BigInt(id.index1) << 32n) | (BigInt(id.world0) << 16n) | BigInt(id.generation));
 }
 
 /// Load a uint64_t into a shape id.
-export function b2LoadShapeId(x: number): b2ShapeId
+export function b2LoadShapeId(x: bigint): b2ShapeId
 {
-	const id: b2ShapeId = new b2ShapeId(x >> 32, x >> 16, x);
+	const id: b2ShapeId = new b2ShapeId(Number(x >> 32n), Number((x >> 16n) & 0xFFFFn), Number(x & 0xFFFFn));
 	return id;
 }
 
 /// Store a chain id into a uint64_t.
-export function b2StoreChainId(id: b2ChainId): number
+export function b2StoreChainId(id: b2ChainId): bigint
 {
-	return (id.index1 << 32) | (id.world0 << 16) | id.generation;
+	return ((BigInt(id.index1) << 32n) | (BigInt(id.world0) << 16n) | BigInt(id.generation));
 }
 
 /// Load a uint64_t into a chain id.
-export function b2LoadChainId(x: number): b2ChainId
+export function b2LoadChainId(x: bigint): b2ChainId
 {
-	const id: b2ChainId = new b2ChainId(x >> 32,x >> 16, x);
+	const id: b2ChainId = new b2ChainId(Number(x >> 32n), Number((x >> 16n) & 0xFFFFn), Number(x & 0xFFFFn));
 	return id;
 }
 
 /// Store a joint id into a uint64_t.
-export function b2StoreJointId(id: b2JointId): number
+export function b2StoreJointId(id: b2JointId): bigint
 {
-	return (id.index1 << 32) | (id.world0 << 16) | id.generation;
+	return ((BigInt(id.index1) << 32n) | (BigInt(id.world0) << 16n) | BigInt(id.generation));
 }
 
 /// Load a uint64_t into a joint id.
-export function b2LoadJointId(x: number): b2JointId
+export function b2LoadJointId(x: bigint): b2JointId
 {
-	const id: b2JointId = new b2JointId(x >> 32, x >> 16, x);
+	const id: b2JointId = new b2JointId(Number(x >> 32n), Number((x >> 16n) & 0xFFFFn), Number(x & 0xFFFFn));
 	return id;
 }
 
 /// Store a contact id into 16 bytes
-B2_ID_INLINE void b2StoreContactId( b2ContactId id, uint32_t values[3] )
+export function b2StoreContactId(id: b2ContactId): number[]
 {
-	values[0] = (uint32_t)id.index1;
-	values[1] = (uint32_t)id.world0;
-	values[2] = (uint32_t)id.generation;
+	let values = new Array(3);
+	values[0] = id.index1;
+	values[1] = id.world0;
+	values[2] = id.generation;
+	return values;
 }
 
 /// Load a two uint64_t into a contact id.
-B2_ID_INLINE b2ContactId b2LoadContactId( uint32_t values[3] )
+export function b2LoadContactId(values: number[]): b2ContactId
 {
-	b2ContactId id;
-	id.index1 = (int32_t)values[0];
-	id.world0 = (uint16_t)values[1];
+	let id: b2ContactId = b2_nullContactId;
+	id.index1 = values[0];
+	id.world0 = values[1];
 	id.padding = 0;
-	id.generation = (uint32_t)values[2];
+	id.generation = values[2];
 	return id;
 }
-
-/**@}*/

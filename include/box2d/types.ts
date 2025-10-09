@@ -4,7 +4,8 @@
 // #include "collision.h"
 // #include "id.h"
 // #include "math_functions.h"
-// 
+import { b2Vec2 } from "./math_functions.ts";
+import { b2ShapeId } from "./id.ts";
 // #include <stdbool.h>
 // #include <stdint.h>
 // 
@@ -27,7 +28,12 @@
 /// }
 /// @endcode
 /// @ingroup world
-// typedef void b2TaskCallback( int startIndex, int endIndex, uint32_t workerIndex, void* taskContext );
+type b2TaskCallback = (
+	startIndex: number,
+	endIndex: number,
+	workerIndex: number,
+	taskContext: void
+) => void;
 
 /// These functions can be provided to Box2D to invoke a task system. These are designed to work well with enkiTS.
 /// Returns a pointer to the user's task object. May be nullptr. A nullptr indicates to Box2D that the work was executed
@@ -40,17 +46,31 @@
 /// endIndex - startIndex >= minRange
 /// The exception of course is when itemCount < minRange.
 /// @ingroup world
-// typedef void* b2EnqueueTaskCallback( b2TaskCallback* task, int itemCount, int minRange, void* taskContext, void* userContext );
+type b2EnqueueTaskCallback = (
+	task: b2TaskCallback,
+	itemCount: number,
+	minRange: number,
+	taskContext: void,
+	userContext: void
+) => void;
 
 /// Finishes a user task object that wraps a Box2D task.
 /// @ingroup world
-// typedef void b2FinishTaskCallback( void* userTask, void* userContext );
+type b2FinishTaskCallback = (
+	userTask: void,
+	userContext: void
+) => void;
 
 /// Optional friction mixing callback. This intentionally provides no context objects because this is called
 /// from a worker thread.
 /// @warning This function should not attempt to modify Box2D state or user application state.
 /// @ingroup world
-// typedef float b2FrictionCallback( float frictionA, uint64_t userMaterialIdA, float frictionB, uint64_t userMaterialIdB );
+type b2FrictionCallback = (
+  frictionA: number,
+  userMaterialIdA: bigint,
+  frictionB: number,
+  userMaterialIdB: bigint
+) => number;
 
 /// Optional restitution mixing callback. This intentionally provides no context objects because this is called
 /// from a worker thread.
@@ -63,44 +83,54 @@
 /// @ingroup world
 export class b2RayResult
 {
-	b2ShapeId shapeId;
-	b2Vec2 point;
-	b2Vec2 normal;
-	float fraction;
-	int nodeVisits;
-	int leafVisits;
-	bool hit;
+	public shapeId: b2ShapeId;
+	public point: b2Vec2;
+	public normal: b2Vec2;
+	public fraction: number;
+	public nodeVisits: number;
+	public leafVisits: number;
+	public hit: boolean;
+
+	constructor(shapeId: b2ShapeId, point: b2Vec2, normal: b2Vec2, fraction: number, nodeVisits: number, leafVisits: number, hit: boolean) {
+		this.shapeId = shapeId;
+		this.point = point;
+		this.normal = normal;
+		this.fraction = fraction;
+		this.nodeVisits = nodeVisits;
+		this.leafVisits = leafVisits;
+		this.hit = hit;
+	}
 }
 
 /// World definition used to create a simulation world.
 /// Must be initialized using b2DefaultWorldDef().
 /// @ingroup world
-typedef struct b2WorldDef
+export class b2WorldDef
 {
 	/// Gravity vector. Box2D has no up-vector defined.
-	b2Vec2 gravity;
+	public gravity: b2Vec2;
 
 	/// Restitution speed threshold, usually in m/s. Collisions above this
 	/// speed have restitution applied (will bounce).
-	float restitutionThreshold;
+	public restitutionThreshold: number;
 
 	/// Threshold speed for hit events. Usually meters per second.
-	float hitEventThreshold;
+	public hitEventThreshold: number;
 
 	/// Contact stiffness. Cycles per second. Increasing this increases the speed of overlap recovery, but can introduce jitter.
-	float contactHertz;
+	public contactHertz: number;
 
 	/// Contact bounciness. Non-dimensional. You can speed up overlap recovery by decreasing this with
 	/// the trade-off that overlap resolution becomes more energetic.
-	float contactDampingRatio;
+	public contactDampingRatio: number;
 
 	/// This parameter controls how fast overlap is resolved and usually has units of meters per second. This only
 	/// puts a cap on the resolution speed. The resolution speed is increased by increasing the hertz and/or
 	/// decreasing the damping ratio.
-	float contactSpeed;
+	public contactSpeed: number;
 
 	/// Maximum linear speed. Usually meters per second.
-	float maximumLinearSpeed;
+	public maximumLinearSpeed: number;
 
 	/// Optional mixing callback for friction. The default uses sqrt(frictionA * frictionB).
 	b2FrictionCallback* frictionCallback;
@@ -140,7 +170,7 @@ typedef struct b2WorldDef
 
 	/// Used internally to detect a valid definition. DO NOT SET.
 	int internalValue;
-} b2WorldDef;
+}
 
 /// Use this to initialize your world definition
 /// @ingroup world
