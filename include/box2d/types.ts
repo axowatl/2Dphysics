@@ -1,6 +1,10 @@
 import { b2_lengthUnitsPerMeter } from "../src/core.ts";
-import { b2Vec2, b2Vec2_zero } from "./math_functions.ts";
-import { b2ShapeId } from "./id.ts";
+import { b2Rot, b2Rot_identity, b2Transform, b2Vec2 } from "./math_functions.ts";
+import { b2BodyId, b2ShapeId } from "./id.ts";
+
+export const B2_DEFAULT_CATEGORY_BITS: bigint = 1n;
+export const B2_DEFAULT_MASK_BITS: bigint = 2n ** 64n - 1n;
+export const B2_SECRET_COOKIE: number = 1152023;
 
 /// Task interface
 /// This is prototype for a Box2D task. Your task system is expected to invoke the Box2D task with these arguments.
@@ -18,7 +22,7 @@ import { b2ShapeId } from "./id.ts";
 /// }
 /// @endcode
 /// @ingroup world
-type b2TaskCallback = (
+export type b2TaskCallback = (
 	startIndex: number,
 	endIndex: number,
 	workerIndex: number,
@@ -36,7 +40,7 @@ type b2TaskCallback = (
 /// endIndex - startIndex >= minRange
 /// The exception of course is when itemCount < minRange.
 /// @ingroup world
-type b2EnqueueTaskCallback = (
+export type b2EnqueueTaskCallback = (
 	task: b2TaskCallback,
 	itemCount: number,
 	minRange: number,
@@ -46,7 +50,7 @@ type b2EnqueueTaskCallback = (
 
 /// Finishes a user task object that wraps a Box2D task.
 /// @ingroup world
-type b2FinishTaskCallback = (
+export type b2FinishTaskCallback = (
 	userTask: void,
 	userContext: void
 ) => void;
@@ -55,7 +59,7 @@ type b2FinishTaskCallback = (
 /// from a worker thread.
 /// @warning This function should not attempt to modify Box2D state or user application state.
 /// @ingroup world
-type b2FrictionCallback = (
+export type b2FrictionCallback = (
   frictionA: number,
   userMaterialIdA: bigint,
   frictionB: number,
@@ -170,7 +174,7 @@ export const b2DefaultWorldDef: b2WorldDef =
 	maximumLinearSpeed: 400 * b2_lengthUnitsPerMeter.value,
 	enableSleep: true,
 	enableContinuous: true,
-	internalValue: 1152023
+	internalValue: B2_SECRET_COOKIE
 }
 
 /// The body simulation type.
@@ -189,105 +193,115 @@ export enum b2BodyType
 
 	/// number of body types
 	b2_bodyTypeCount,
-} b2BodyType;
+}
 
 /// Motion locks to restrict the body movement
-typedef struct b2MotionLocks
+export interface b2MotionLocks
 {
 	/// Prevent translation along the x-axis
-	bool linearX;
+	linearX: boolean;
 
 	/// Prevent translation along the y-axis
-	bool linearY;
+	linearY: boolean;
 
 	/// Prevent rotation around the z-axis
-	bool angularZ;
-} b2MotionLocks;
+	angularZ: boolean;
+}
 
 /// A body definition holds all the data needed to construct a rigid body.
 /// You can safely re-use body definitions. Shapes are added to a body after construction.
 /// Body definitions are temporary objects used to bundle creation parameters.
 /// Must be initialized using b2DefaultBodyDef().
 /// @ingroup body
-typedef struct b2BodyDef
+export interface b2BodyDef
 {
 	/// The body type: static, kinematic, or dynamic.
-	b2BodyType type;
+	type: b2BodyType;
 
 	/// The initial world position of the body. Bodies should be created with the desired position.
 	/// @note Creating bodies at the origin and then moving them nearly doubles the cost of body creation, especially
 	/// if the body is moved after shapes have been added.
-	b2Vec2 position;
+	position?: b2Vec2;
 
 	/// The initial world rotation of the body. Use b2MakeRot() if you have an angle.
-	b2Rot rotation;
+	rotation: b2Rot;
 
 	/// The initial linear velocity of the body's origin. Usually in meters per second.
-	b2Vec2 linearVelocity;
+	linearVelocity?: b2Vec2;
 
 	/// The initial angular velocity of the body. Radians per second.
-	float angularVelocity;
+	angularVelocity?: number;
 
 	/// Linear damping is used to reduce the linear velocity. The damping parameter
 	/// can be larger than 1 but the damping effect becomes sensitive to the
 	/// time step when the damping parameter is large.
 	/// Generally linear damping is undesirable because it makes objects move slowly
 	/// as if they are floating.
-	float linearDamping;
+	linearDamping?: number;
 
 	/// Angular damping is used to reduce the angular velocity. The damping parameter
 	/// can be larger than 1.0f but the damping effect becomes sensitive to the
 	/// time step when the damping parameter is large.
 	/// Angular damping can be use slow down rotating bodies.
-	float angularDamping;
+	angularDamping?: number;
 
 	/// Scale the gravity applied to this body. Non-dimensional.
-	float gravityScale;
+	gravityScale: number;
 
 	/// Sleep speed threshold, default is 0.05 meters per second
-	float sleepThreshold;
+	sleepThreshold: number;
 
 	/// Optional body name for debugging. Up to 31 characters (excluding null termination)
-	const char* name;
+	name?: string;
 
 	/// Use this to store application specific body data.
-	void* userData;
+	userData?: void;
 
 	/// Motions locks to restrict linear and angular movement.
 	/// Caution: may lead to softer constraints along the locked direction
-	b2MotionLocks motionLocks;
+	motionLocks?: b2MotionLocks;
 
 	/// Set this flag to false if this body should never fall asleep.
-	bool enableSleep;
+	enableSleep: boolean;
 
 	/// Is this body initially awake or sleeping?
-	bool isAwake;
+	isAwake: boolean;
 
 	/// Treat this body as high speed object that performs continuous collision detection
 	/// against dynamic and kinematic bodies, but not other bullet bodies.
 	/// @warning Bullets should be used sparingly. They are not a solution for general dynamic-versus-dynamic
 	/// continuous collision.
-	bool isBullet;
+	isBullet?: boolean;
 
 	/// Used to disable a body. A disabled body does not move or collide.
-	bool isEnabled;
+	isEnabled: boolean;
 
 	/// This allows this body to bypass rotational speed limits. Should only be used
 	/// for circular objects, like wheels.
-	bool allowFastRotation;
+	allowFastRotation?: boolean;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int internalValue;
-} b2BodyDef;
+	internalValue: number;
+}
 
 /// Use this to initialize your body definition
 /// @ingroup body
-B2_API b2BodyDef b2DefaultBodyDef( void );
+export const b2DefaultBodyDef: b2BodyDef = 
+{
+	type: b2BodyType.b2_staticBody,
+	rotation: b2Rot_identity,
+	sleepThreshold: 0.05 * b2_lengthUnitsPerMeter.value,
+	gravityScale: 1,
+	enableSleep: true,
+	isAwake: true,
+	isEnabled: true,
+	internalValue: B2_SECRET_COOKIE,
+}
 
 /// This is used to filter collision on shapes. It affects shape-vs-shape collision
 /// and shape-versus-query collision (such as b2World_CastRay).
 /// @ingroup shape
-typedef struct b2Filter
+export interface b2Filter
 {
 	/// The collision category bits. Normally you would just set one bit. The category bits should
 	/// represent your application object types. For example:
@@ -301,7 +315,7 @@ typedef struct b2Filter
 	///    // etc
 	/// };
 	/// @endcode
-	uint64_t categoryBits;
+	categoryBits: bigint;
 
 	/// The collision mask bits. This states the categories that this
 	/// shape would accept for collision.
@@ -310,7 +324,7 @@ typedef struct b2Filter
 	/// @code{.c}
 	/// maskBits = Static | Player;
 	/// @endcode
-	uint64_t maskBits;
+	maskBits: bigint;
 
 	/// Collision groups allow a certain group of objects to never collide (negative)
 	/// or always collide (positive). A group index of zero has no effect. Non-zero group filtering
@@ -318,34 +332,43 @@ typedef struct b2Filter
 	/// For example, you may want ragdolls to collide with other ragdolls but you don't want
 	/// ragdoll self-collision. In this case you would give each ragdoll a unique negative group index
 	/// and apply that group index to all shapes on the ragdoll.
-	int groupIndex;
-} b2Filter;
+	groupIndex: number;
+}
 
 /// Use this to initialize your filter
 /// @ingroup shape
-B2_API b2Filter b2DefaultFilter( void );
+export const b2DefaultFilter: b2Filter = 
+{
+	categoryBits: B2_DEFAULT_CATEGORY_BITS,
+	maskBits: B2_DEFAULT_MASK_BITS,
+	groupIndex: 0
+}
 
 /// The query filter is used to filter collisions between queries and shapes. For example,
 /// you may want a ray-cast representing a projectile to hit players and the static environment
 /// but not debris.
 /// @ingroup shape
-typedef struct b2QueryFilter
+export interface b2QueryFilter
 {
 	/// The collision category bits of this query. Normally you would just set one bit.
-	uint64_t categoryBits;
+	categoryBits: bigint;
 
 	/// The collision mask bits. This states the shape categories that this
 	/// query would accept for collision.
-	uint64_t maskBits;
-} b2QueryFilter;
+	maskBits: bigint;
+}
 
 /// Use this to initialize your query filter
 /// @ingroup shape
-B2_API b2QueryFilter b2DefaultQueryFilter( void );
+export const b2DefaultQueryFilter: b2QueryFilter =
+{
+	categoryBits: B2_DEFAULT_CATEGORY_BITS,
+	maskBits: B2_DEFAULT_MASK_BITS
+}
 
 /// Shape type
 /// @ingroup shape
-typedef enum b2ShapeType
+export enum b2ShapeType
 {
 	/// A circle with an offset
 	b2_circleShape,
@@ -364,96 +387,107 @@ typedef enum b2ShapeType
 
 	/// The number of shape types
 	b2_shapeTypeCount
-} b2ShapeType;
+}
 
 /// Surface materials allow chain shapes to have per segment surface properties.
 /// @ingroup shape
-typedef struct b2SurfaceMaterial
+export interface b2SurfaceMaterial
 {
 	/// The Coulomb (dry) friction coefficient, usually in the range [0,1].
-	float friction;
+	friction: number;
 
 	/// The coefficient of restitution (bounce) usually in the range [0,1].
 	/// https://en.wikipedia.org/wiki/Coefficient_of_restitution
-	float restitution;
+	restitution?: number;
 
 	/// The rolling resistance usually in the range [0,1].
-	float rollingResistance;
+	rollingResistance?: number;
 
 	/// The tangent speed for conveyor belts
-	float tangentSpeed;
+	tangentSpeed?: number;
 
 	/// User material identifier. This is passed with query results and to friction and restitution
 	/// combining functions. It is not used internally.
-	uint64_t userMaterialId;
+	userMaterialId?: bigint;
 
 	/// Custom debug draw color.
-	uint32_t customColor;
-} b2SurfaceMaterial;
+	customColor?: number;
+}
 
 /// Use this to initialize your surface material
 /// @ingroup shape
-B2_API b2SurfaceMaterial b2DefaultSurfaceMaterial( void );
+export const b2DefaultSurfaceMaterial: b2SurfaceMaterial =
+{
+	friction: 0.6
+}
 
 /// Used to create a shape.
 /// This is a temporary object used to bundle shape creation parameters. You may use
 /// the same shape definition to create multiple shapes.
 /// Must be initialized using b2DefaultShapeDef().
 /// @ingroup shape
-typedef struct b2ShapeDef
+export interface b2ShapeDef
 {
 	/// Use this to store application specific shape data.
-	void* userData;
+	userData?: void;
 
 	/// The surface material for this shape.
-	b2SurfaceMaterial material;
+	material: b2SurfaceMaterial;
 
 	/// The density, usually in kg/m^2.
 	/// This is not part of the surface material because this is for the interior, which may have
 	/// other considerations, such as being hollow. For example a wood barrel may be hollow or full of water.
-	float density;
+	density: number;
 
 	/// Collision filtering data.
-	b2Filter filter;
+	filter: b2Filter;
 
 	/// Enable custom filtering. Only one of the two shapes needs to enable custom filtering. See b2WorldDef.
-	bool enableCustomFiltering;
+	enableCustomFiltering?: boolean;
 
 	/// A sensor shape generates overlap events but never generates a collision response.
 	/// Sensors do not have continuous collision. Instead, use a ray or shape cast for those scenarios.
 	/// Sensors still contribute to the body mass if they have non-zero density.
 	/// @note Sensor events are disabled by default.
 	/// @see enableSensorEvents
-	bool isSensor;
+	isSensor?: boolean;
 
 	/// Enable sensor events for this shape. This applies to sensors and non-sensors. False by default, even for sensors.
-	bool enableSensorEvents;
+	enableSensorEvents?: boolean;
 
 	/// Enable contact events for this shape. Only applies to kinematic and dynamic bodies. Ignored for sensors. False by default.
-	bool enableContactEvents;
+	enableContactEvents?: boolean;
 
 	/// Enable hit events for this shape. Only applies to kinematic and dynamic bodies. Ignored for sensors. False by default.
-	bool enableHitEvents;
+	enableHitEvents?: boolean;
 
 	/// Enable pre-solve contact events for this shape. Only applies to dynamic bodies. These are expensive
 	/// and must be carefully handled due to multithreading. Ignored for sensors.
-	bool enablePreSolveEvents;
+	enablePreSolveEvents?: boolean;
 
 	/// When shapes are created they will scan the environment for collision the next time step. This can significantly slow down
 	/// static body creation when there are many static shapes.
 	/// This is flag is ignored for dynamic and kinematic shapes which always invoke contact creation.
-	bool invokeContactCreation;
+	invokeContactCreation: boolean;
 
 	/// Should the body update the mass properties when this shape is created. Default is true.
-	bool updateBodyMass;
+	updateBodyMass: boolean;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int internalValue;
-} b2ShapeDef;
+	internalValue: number;
+}
 
 /// Use this to initialize your shape definition
 /// @ingroup shape
-B2_API b2ShapeDef b2DefaultShapeDef( void );
+export const b2DefaultShapeDef: b2ShapeDef =
+{
+	material: b2DefaultSurfaceMaterial,
+	density: 1,
+	filter: b2DefaultFilter,
+	updateBodyMass: true,
+	invokeContactCreation: true,
+	internalValue: B2_SECRET_COOKIE
+}
 
 /// Used to create a chain of line segments. This is designed to eliminate ghost collisions with some limitations.
 /// - chains are one-sided
@@ -470,93 +504,98 @@ B2_API b2ShapeDef b2DefaultShapeDef( void );
 /// Must be initialized using b2DefaultChainDef().
 /// @warning Do not use chain shapes unless you understand the limitations. This is an advanced feature.
 /// @ingroup shape
-typedef struct b2ChainDef
+export interface b2ChainDef
 {
 	/// Use this to store application specific shape data.
-	void* userData;
+	userData?: void;
 
 	/// An array of at least 4 points. These are cloned and may be temporary.
-	const b2Vec2* points;
+	points?: b2Vec2;
 
 	/// The point count, must be 4 or more.
-	int count;
+	count?: number;
 
 	/// Surface materials for each segment. These are cloned.
-	const b2SurfaceMaterial* materials;
+	materials: b2SurfaceMaterial;
 
 	/// The material count. Must be 1 or count. This allows you to provide one
 	/// material for all segments or a unique material per segment.
-	int materialCount;
+	materialCount: number;
 
 	/// Contact filtering data.
-	b2Filter filter;
+	filter: b2Filter;
 
 	/// Indicates a closed chain formed by connecting the first and last points
-	bool isLoop;
+	isLoop?: boolean;
 
 	/// Enable sensors to detect this chain. False by default.
-	bool enableSensorEvents;
+	enableSensorEvents?: boolean;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int internalValue;
-} b2ChainDef;
+	internalValue: number;
+}
 
 /// Use this to initialize your chain definition
 /// @ingroup shape
-B2_API b2ChainDef b2DefaultChainDef( void );
+export const b2DefaultChainDef: b2ChainDef =
+{
+	materials: b2DefaultSurfaceMaterial,
+	materialCount: 1,
+	filter: b2DefaultFilter,
+	internalValue: B2_SECRET_COOKIE
+}
 
 //! @cond
 /// Profiling data. Times are in milliseconds.
-typedef struct b2Profile
+export interface b2Profile
 {
-	float step;
-	float pairs;
-	float collide;
-	float solve;
-	float prepareStages;
-	float solveConstraints;
-	float prepareConstraints;
-	float integrateVelocities;
-	float warmStart;
-	float solveImpulses;
-	float integratePositions;
-	float relaxImpulses;
-	float applyRestitution;
-	float storeImpulses;
-	float splitIslands;
-	float transforms;
-	float sensorHits;
-	float jointEvents;
-	float hitEvents;
-	float refit;
-	float bullets;
-	float sleepIslands;
-	float sensors;
-} b2Profile;
+	step: number;
+	pairs: number;
+	collide: number;
+	solve: number;
+	prepareStages: number;
+	solveConstraints: number;
+	prepareConstraints: number;
+	integrateVelocities: number;
+	warmStart: number;
+	solveImpulses: number;
+	integratePositions: number;
+	relaxImpulses: number;
+	applyRestitution: number;
+	storeImpulses: number;
+	splitIslands: number;
+	transforms: number;
+	sensorHits: number;
+	jointEvents: number;
+	hitEvents: number;
+	refit: number;
+	bullets: number;
+	sleepIslands: number;
+	sensors: number;
+}
 
 /// Counters that give details of the simulation size.
-typedef struct b2Counters
+export interface b2Counters
 {
-	int bodyCount;
-	int shapeCount;
-	int contactCount;
-	int jointCount;
-	int islandCount;
-	int stackUsed;
-	int staticTreeHeight;
-	int treeHeight;
-	int byteCount;
-	int taskCount;
-	int colorCounts[24];
-} b2Counters;
-//! @endcond
+	bodyCount: number;
+	shapeCount: number;
+	contactCount: number;
+	jointCount: number;
+	islandCount: number;
+	stackUsed: number;
+	staticTreeHeight: number;
+	treeHeight: number;
+	byteCount: number;
+	taskCount: number;
+	colorCounts: number[];
+}
 
 /// Joint type enumeration
 ///
 /// This is useful because all joint types use b2JointId and sometimes you
 /// want to get the type of a joint.
 /// @ingroup joint
-typedef enum b2JointType
+export enum b2JointType
 {
 	b2_distanceJoint,
 	b2_filterJoint,
@@ -565,148 +604,139 @@ typedef enum b2JointType
 	b2_revoluteJoint,
 	b2_weldJoint,
 	b2_wheelJoint,
-} b2JointType;
+}
 
 /// Base joint definition used by all joint types.
 /// The local frames are measured from the body's origin rather than the center of mass because:
 /// 1. you might not know where the center of mass will be
 /// 2. if you add/remove shapes from a body and recompute the mass, the joints will be broken
-typedef struct b2JointDef
+export interface b2JointDef
 {
 	/// User data pointer
-	void* userData;
+	userData: void;
 
 	/// The first attached body
-	b2BodyId bodyIdA;
+	bodyIdA: b2BodyId;
 
 	/// The second attached body
-	b2BodyId bodyIdB;
+	bodyIdB: b2BodyId;
 
 	/// The first local joint frame
-	b2Transform localFrameA;
+	localFrameA: b2Transform;
 
 	/// The second local joint frame
-	b2Transform localFrameB;
+	localFrameB: b2Transform;
 
 	/// Force threshold for joint events
-	float forceThreshold;
+	forceThreshold: number;
 
 	/// Torque threshold for joint events
-	float torqueThreshold;
+	torqueThreshold: number;
 
 	/// Constraint hertz (advanced feature)
-	float constraintHertz;
+	constraintHertz: number;
 
 	/// Constraint damping ratio (advanced feature)
-	float constraintDampingRatio;
+	constraintDampingRatio: number;
 
 	/// Debug draw scale
-	float drawScale;
+	drawScale: number;
 
 	/// Set this flag to true if the attached bodies should collide
-	bool collideConnected;
-
-} b2JointDef;
+	collideConnected: boolean;
+}
 
 /// Distance joint definition
 /// Connects a point on body A with a point on body B by a segment.
 /// Useful for ropes and springs.
 /// @ingroup distance_joint
-typedef struct b2DistanceJointDef
+export interface b2DistanceJointDef
 {
 	/// Base joint definition
-	b2JointDef base;
+	base: b2JointDef;
 
 	/// The rest length of this joint. Clamped to a stable minimum value.
-	float length;
+	length: number;
 
 	/// Enable the distance constraint to behave like a spring. If false
 	/// then the distance joint will be rigid, overriding the limit and motor.
-	bool enableSpring;
+	enableSpring: number;
 
 	/// The lower spring force controls how much tension it can sustain
-	float lowerSpringForce;
+	lowerSpringForce: number;
 
 	/// The upper spring force controls how much compression it an sustain
-	float upperSpringForce;
+	upperSpringForce: number;
 
 	/// The spring linear stiffness Hertz, cycles per second
-	float hertz;
+	hertz: number;
 
 	/// The spring linear damping ratio, non-dimensional
-	float dampingRatio;
+	dampingRatio: number;
 
 	/// Enable/disable the joint limit
-	bool enableLimit;
+	enableLimit: boolean;
 
 	/// Minimum length. Clamped to a stable minimum value.
-	float minLength;
+	minLength: number;
 
 	/// Maximum length. Must be greater than or equal to the minimum length.
-	float maxLength;
+	maxLength: number;
 
 	/// Enable/disable the joint motor
-	bool enableMotor;
+	enableMotor: boolean;
 
 	/// The maximum motor force, usually in newtons
-	float maxMotorForce;
+	maxMotorForce: number;
 
 	/// The desired motor speed, usually in meters per second
-	float motorSpeed;
+	motorSpeed: number;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int internalValue;
-} b2DistanceJointDef;
-
-/// Use this to initialize your joint definition
-/// @ingroup distance_joint
-B2_API b2DistanceJointDef b2DefaultDistanceJointDef( void );
+	internalValue: number;
+}
 
 /// A motor joint is used to control the relative velocity and or transform between two bodies.
 /// With a velocity of zero this acts like top-down friction.
 /// @ingroup motor_joint
-typedef struct b2MotorJointDef
+export interface b2MotorJointDef
 {
 	/// Base joint definition
-	b2JointDef base;
+	base: b2JointDef;
 
 	/// The desired linear velocity
-	b2Vec2 linearVelocity;
+	linearVelocity: b2Vec2;
 
 	/// The maximum motor force in newtons
-	float maxVelocityForce;
+	maxVelocityForce: number;
 
 	/// The desired angular velocity
-	float angularVelocity;
+	angularVelocity: number;
 
 	/// The maximum motor torque in newton-meters
-	float maxVelocityTorque;
+	maxVelocityTorque: number;
 
 	/// Linear spring hertz for position control
-	float linearHertz;
+	linearHertz: number;
 
 	/// Linear spring damping ratio
-	float linearDampingRatio;
+	linearDampingRatio: number;
 
 	/// Maximum spring force in newtons
-	float maxSpringForce;
+	maxSpringForce: number;
 
 	/// Angular spring hertz for position control
-	float angularHertz;
+	angularHertz: number;
 
 	/// Angular spring damping ratio
-	float angularDampingRatio;
+	angularDampingRatio: number;
 
 	/// Maximum spring torque in newton-meters
-	float maxSpringTorque;
+	maxSpringTorque: number;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int internalValue;
-} b2MotorJointDef;
-
-/// Use this to initialize your joint definition
-/// @ingroup motor_joint
-B2_API b2MotorJointDef b2DefaultMotorJointDef( void );
+	internalValue: number;
+}
 
 /// A filter joint is used to disable collision between two specific bodies.
 ///
