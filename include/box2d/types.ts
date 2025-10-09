@@ -1,16 +1,6 @@
-// SPDX-FileCopyrightText: 2023 Erin Catto
-// SPDX-License-Identifier: MIT
-// #include "base.h"
-// #include "collision.h"
-// #include "id.h"
-// #include "math_functions.h"
-import { b2Vec2 } from "./math_functions.ts";
+import { b2_lengthUnitsPerMeter } from "../src/core.ts";
+import { b2Vec2, b2Vec2_zero } from "./math_functions.ts";
 import { b2ShapeId } from "./id.ts";
-// #include <stdbool.h>
-// #include <stdint.h>
-// 
-// #define B2_DEFAULT_CATEGORY_BITS 1
-// #define B2_DEFAULT_MASK_BITS UINT64_MAX
 
 /// Task interface
 /// This is prototype for a Box2D task. Your task system is expected to invoke the Box2D task with these arguments.
@@ -76,12 +66,17 @@ type b2FrictionCallback = (
 /// from a worker thread.
 /// @warning This function should not attempt to modify Box2D state or user application state.
 /// @ingroup world
-// typedef float b2RestitutionCallback( float restitutionA, uint64_t userMaterialIdA, float restitutionB, uint64_t userMaterialIdB );
+export type b2RestitutionCallback = (
+	restitutionA: number,
+	userMaterialIdA: bigint,
+	restitutionB: number,
+	userMaterialIdB: bigint
+) => number
 
 /// Result from b2World_RayCastClosest
 /// If there is initial overlap the fraction and normal will be zero while the point is an arbitrary point in the overlap region.
 /// @ingroup world
-export class b2RayResult
+export interface b2RayResult
 {
 	public shapeId: b2ShapeId;
 	public point: b2Vec2;
@@ -90,62 +85,52 @@ export class b2RayResult
 	public nodeVisits: number;
 	public leafVisits: number;
 	public hit: boolean;
-
-	constructor(shapeId: b2ShapeId, point: b2Vec2, normal: b2Vec2, fraction: number, nodeVisits: number, leafVisits: number, hit: boolean) {
-		this.shapeId = shapeId;
-		this.point = point;
-		this.normal = normal;
-		this.fraction = fraction;
-		this.nodeVisits = nodeVisits;
-		this.leafVisits = leafVisits;
-		this.hit = hit;
-	}
 }
 
 /// World definition used to create a simulation world.
 /// Must be initialized using b2DefaultWorldDef().
 /// @ingroup world
-export class b2WorldDef
+export interface b2WorldDef
 {
 	/// Gravity vector. Box2D has no up-vector defined.
-	public gravity: b2Vec2;
+	gravity: b2Vec2;
 
 	/// Restitution speed threshold, usually in m/s. Collisions above this
 	/// speed have restitution applied (will bounce).
-	public restitutionThreshold: number;
+	restitutionThreshold: number;
 
 	/// Threshold speed for hit events. Usually meters per second.
-	public hitEventThreshold: number;
+	hitEventThreshold: number;
 
 	/// Contact stiffness. Cycles per second. Increasing this increases the speed of overlap recovery, but can introduce jitter.
-	public contactHertz: number;
+	contactHertz: number;
 
 	/// Contact bounciness. Non-dimensional. You can speed up overlap recovery by decreasing this with
 	/// the trade-off that overlap resolution becomes more energetic.
-	public contactDampingRatio: number;
+	contactDampingRatio: number;
 
 	/// This parameter controls how fast overlap is resolved and usually has units of meters per second. This only
 	/// puts a cap on the resolution speed. The resolution speed is increased by increasing the hertz and/or
 	/// decreasing the damping ratio.
-	public contactSpeed: number;
+	contactSpeed: number;
 
 	/// Maximum linear speed. Usually meters per second.
-	public maximumLinearSpeed: number;
+	maximumLinearSpeed: number;
 
 	/// Optional mixing callback for friction. The default uses sqrt(frictionA * frictionB).
-	b2FrictionCallback* frictionCallback;
+	frictionCallback?: b2FrictionCallback;
 
 	/// Optional mixing callback for restitution. The default uses max(restitutionA, restitutionB).
-	b2RestitutionCallback* restitutionCallback;
+	restitutionCallback?: b2RestitutionCallback;
 
 	/// Can bodies go to sleep to improve performance
-	bool enableSleep;
+	enableSleep: boolean;
 
 	/// Enable continuous collision
-	bool enableContinuous;
+	enableContinuous: boolean;
 
 	/// Contact softening when mass ratios are large. Experimental.
-	bool enableContactSoftening;
+	enableContactSoftening?: boolean;
 
 	/// Number of workers to use with the provided task system. Box2D performs best when using only
 	/// performance cores and accessing a single L2 cache. Efficiency cores and hyper-threading provide
@@ -154,32 +139,44 @@ export class b2WorldDef
 	/// that you are allocating to b2World_Step.
 	/// @warning Do not modify the default value unless you are also providing a task system and providing
 	/// task callbacks (enqueueTask and finishTask).
-	int workerCount;
+	workerCount?: number;
 
 	/// Function to spawn tasks
-	b2EnqueueTaskCallback* enqueueTask;
+	enqueueTask?: b2EnqueueTaskCallback;
 
 	/// Function to finish a task
-	b2FinishTaskCallback* finishTask;
+	finishTask?: b2FinishTaskCallback;
 
 	/// User context that is provided to enqueueTask and finishTask
-	void* userTaskContext;
+	userTaskContext?: void;
 
 	/// User data
-	void* userData;
+	userData?: void;
 
 	/// Used internally to detect a valid definition. DO NOT SET.
-	int internalValue;
+	internalValue: number;
 }
 
 /// Use this to initialize your world definition
 /// @ingroup world
-B2_API b2WorldDef b2DefaultWorldDef( void );
+export const b2DefaultWorldDef: b2WorldDef = 
+{
+	gravity: new b2Vec2(0, -10),
+	hitEventThreshold: b2_lengthUnitsPerMeter.value,
+	restitutionThreshold: b2_lengthUnitsPerMeter.value,
+	contactSpeed: 3 * b2_lengthUnitsPerMeter.value,
+	contactHertz: 30,
+	contactDampingRatio: 10,
+	maximumLinearSpeed: 400 * b2_lengthUnitsPerMeter.value,
+	enableSleep: true,
+	enableContinuous: true,
+	internalValue: 1152023
+}
 
 /// The body simulation type.
 /// Each body is one of these three types. The type determines how the body behaves in the simulation.
 /// @ingroup body
-typedef enum b2BodyType
+export enum b2BodyType
 {
 	/// zero mass, zero velocity, may be manually moved
 	b2_staticBody = 0,
